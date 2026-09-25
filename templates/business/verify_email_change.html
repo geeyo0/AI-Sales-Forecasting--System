@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Verify email | FoodCast</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+</head>
+
+<body>
+    <main class="profile-verification-page">
+        <section class="card profile-verification-card">
+            <h1>Verify your new email</h1>
+
+            <p>
+                Enter the six-digit code sent to
+                <strong>{{ email }}</strong>.
+            </p>
+
+            {% if error %}
+            <div class="business-error" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="profile-edit-field">
+                    <label for="verification-code">
+                        Verification code
+                    </label>
+
+                    <input id="verification-code" name="verification_code" type="text" inputmode="numeric"
+                        pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" required autofocus>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Verify email
+                </button>
+            </form>
+
+            <a href="{{ url_for('edit_business_profile') }}">
+                Cancel
+            </a>
+        </section>
+    </main>
+</body>
+
+</html>

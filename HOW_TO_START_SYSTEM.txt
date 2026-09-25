@@ -1,0 +1,229 @@
+============================================================
+FOODCAST
+AI-BASED SALES FORECASTING AND DECISION SUPPORT SYSTEM
+============================================================
+
+PROJECT LOCATION
+
+C:\Users\thea\Desktop\ai-sales-forcasting
+
+
+============================================================
+REQUIREMENTS
+============================================================
+
+Before starting the system, make sure the following are installed:
+
+1. XAMPP
+2. Python
+3. The project Python virtual environment (.venv)
+4. A web browser such as Google Chrome or Microsoft Edge
+
+
+============================================================
+HOW TO START THE SYSTEM
+============================================================
+
+STEP 1: START THE DATABASE
+
+1. Open the XAMPP Control Panel.
+2. Find MySQL.
+3. Click the Start button beside MySQL.
+4. Wait until MySQL is highlighted in green.
+
+Apache is not required because FoodCast uses Flask as its web
+server. Only MySQL needs to be running in XAMPP.
+
+
+------------------------------------------------------------
+OPTION 1: START USING start-system.bat
+------------------------------------------------------------
+
+1. Open the project folder:
+
+   C:\Users\thea\Desktop\ai-sales-forcasting
+
+2. Double-click:
+
+   start-system.bat
+
+3. Keep the command window open while using the system.
+
+4. Open this address in your browser:
+
+   http://127.0.0.1:5001
+
+5. To stop the system, close the command window or press Ctrl+C.
+
+
+------------------------------------------------------------
+OPTION 2: START USING POWERSHELL OR THE VS CODE TERMINAL
+------------------------------------------------------------
+
+1. Open PowerShell or the VS Code terminal.
+
+2. Go to the project folder:
+
+   cd C:\Users\thea\Desktop\ai-sales-forcasting
+
+3. Activate the virtual environment:
+
+   .\.venv\Scripts\Activate.ps1
+
+4. Start the Flask application:
+
+   python -m flask --app app run --host 127.0.0.1 --port 5001
+
+5. Open this address in your browser:
+
+   http://127.0.0.1:5001
+
+6. Keep the terminal open while using the system.
+
+7. To stop the server, press:
+
+   Ctrl+C
+
+
+------------------------------------------------------------
+IF POWERSHELL BLOCKS VIRTUAL-ENVIRONMENT ACTIVATION
+------------------------------------------------------------
+
+You can start the application without activating the virtual
+environment. Run:
+
+.\.venv\Scripts\python.exe -m flask --app app run --host 127.0.0.1 --port 5001
+
+
+============================================================
+TEST ACCOUNTS
+============================================================
+
+ADMIN ACCOUNT
+
+Username:
+admin
+
+Password:
+admin7654321
+
+
+FRENCH BAKERY DEMO ACCOUNT
+
+Username:
+french_bakery_demo
+
+Password:
+french_bakery_demo
+
+
+The French Bakery Demo account contains demonstration products,
+sales records, stock information, and forecasting data. Its data
+belongs only to that account and should not appear in other
+business accounts.
+
+
+============================================================
+FIRST-TIME SETUP
+============================================================
+
+If the virtual environment has not been created yet, run:
+
+python -m venv .venv
+
+Activate it:
+
+.\.venv\Scripts\Activate.ps1
+
+Install the required packages:
+
+python -m pip install -r requirements.txt
+
+
+============================================================
+EMAIL VERIFICATION
+============================================================
+
+Registration, MFA, password reset, and email-change verification
+require the FoodCast sender-email settings.
+
+Set them in the same PowerShell window before starting Flask:
+
+$env:FOODCAST_EMAIL = "your_sender_email@gmail.com"
+$env:FOODCAST_EMAIL_APP_PASSWORD = "your_google_app_password"
+
+Then start the system:
+
+python -m flask --app app run --host 127.0.0.1 --port 5001
+
+Use a Google App Password for FOODCAST_EMAIL_APP_PASSWORD.
+Do not use the regular password of the Gmail account.
+
+
+============================================================
+COMMON PROBLEMS
+============================================================
+
+PROBLEM:
+The page cannot be opened.
+
+SOLUTION:
+Make sure the Flask terminal is still running and open:
+
+http://127.0.0.1:5001
+
+
+PROBLEM:
+The system cannot connect to the database.
+
+SOLUTION:
+Open XAMPP and make sure MySQL is running.
+
+
+PROBLEM:
+A Python package is missing.
+
+SOLUTION:
+Run:
+
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+
+PROBLEM:
+Port 5001 is already in use.
+
+SOLUTION:
+Close the other FoodCast command window, or stop the old server
+by pressing Ctrl+C.
+
+
+PROBLEM:
+Changes to CSS or JavaScript do not appear.
+
+SOLUTION:
+Refresh the browser using:
+
+Ctrl+F5
+
+
+PROBLEM:
+Email verification cannot be sent.
+
+SOLUTION:
+Check FOODCAST_EMAIL and FOODCAST_EMAIL_APP_PASSWORD, and make
+sure the sender Gmail account uses a valid Google App Password.
+
+
+============================================================
+IMPORTANT REMINDERS
+============================================================
+
+1. Start MySQL before opening FoodCast.
+2. Keep the Flask command window open while using the system.
+3. Do not delete the .venv, database, instance, data, or models
+   folders.
+4. Do not share real passwords or email app passwords.
+5. The test-account credentials above are intended only for the
+   local demonstration system.
+6. Back up the database before running SQL migrations.
+7. Stop the Flask server with Ctrl+C before shutting down MySQL.

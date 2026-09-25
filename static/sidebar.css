@@ -1,0 +1,765 @@
+html.has-sidebar {
+    --sidebar-width: 260px;
+    --sidebar-compact-width: 72px;
+    padding-bottom: 0;
+}
+
+html.has-sidebar .shell {
+    display: block;
+    min-height: 100vh;
+}
+
+html.has-sidebar .shell>.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 100;
+
+    display: flex;
+    flex-direction: column;
+
+    width: var(--sidebar-width);
+    height: 100dvh;
+    padding: 24px 16px;
+
+    background: #f4f6f2;
+    border: 0;
+    border-radius: 0 26px 26px 0;
+    box-shadow: 9px 0 26px rgba(118, 135, 123, 0.12);
+}
+
+html.has-sidebar .shell>.main {
+    min-width: 0;
+    min-height: 100vh;
+    margin-left: var(--sidebar-width);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    min-height: 70px;
+    margin-bottom: 30px;
+}
+
+.sidebar-brand-images {
+    position: relative;
+    width: 180px;
+    height: 52px;
+    overflow: hidden;
+}
+
+.sidebar-wordmark {
+    position: absolute;
+    top: 50%;
+    left: -5%;
+    width: 110%;
+    max-width: none;
+    transform: translateY(-50%);
+}
+
+.sidebar-brand-images .wordmark-light {
+    display: block;
+}
+
+.sidebar-brand-images .wordmark-dark {
+    display: none;
+}
+
+html[data-theme="dark"] .sidebar-brand-images .wordmark-light {
+    display: none;
+}
+
+html[data-theme="dark"] .sidebar-brand-images .wordmark-dark {
+    display: block;
+}
+
+.sidebar-toggle {
+    display: grid;
+    place-items: center;
+
+    width: 44px;
+    height: 44px;
+    padding: 0;
+
+    color: var(--ink-soft);
+    background: #e8ece8;
+    border: 0;
+    border-radius: 14px;
+    box-shadow:
+        inset 2px 2px 5px rgba(131, 148, 135, 0.15),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+}
+
+.sidebar-toggle-logo {
+    display: none;
+}
+
+.menu-icon {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.sidebar-navigation {
+    display: grid;
+    gap: 7px;
+}
+
+.sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    width: 100%;
+    min-height: 54px;
+    padding: 14px 17px;
+
+    color: #5f6863;
+    background: transparent;
+    border: 0;
+    border-radius: 18px;
+
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.sidebar .nav-item:hover {
+    color: #155c35;
+    background: #e7f1e8;
+}
+
+.sidebar .nav-item.active,
+.sidebar .nav-item[aria-current="page"] {
+    color: #155c35;
+    background: #dcecdf;
+    box-shadow:
+        inset 3px 3px 7px rgba(134, 164, 141, 0.15),
+        inset -3px -3px 7px rgba(255, 255, 255, 0.95);
+}
+
+.sidebar-actions {
+    display: grid;
+    gap: 9px;
+
+    margin-top: auto;
+    padding-top: 22px;
+    border-top: 1px solid rgba(108, 130, 114, 0.18);
+}
+
+.sidebar-actions form {
+    margin: 0;
+}
+
+.sidebar-actions .nav-item {
+    color: #5f6863;
+}
+
+.sidebar-toggle:focus-visible,
+.sidebar .nav-item:focus-visible {
+    outline: 3px solid var(--orange);
+    outline-offset: 3px;
+}
+
+.home-profile {
+    position: relative;
+    margin-left: 0;
+}
+
+.home-profile summary {
+    display: grid;
+    place-items: center;
+
+    width: 44px;
+    height: 44px;
+    padding: 0;
+
+    background: #e1f0e4;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    list-style: none;
+}
+
+.home-profile summary::-webkit-details-marker {
+    display: none;
+}
+
+.avatar {
+    color: #1c623a;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.profile-panel {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    z-index: 200;
+
+    width: min(320px, calc(100vw - 32px));
+    padding: 20px;
+
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+}
+
+.profile-panel h2 {
+    margin: 0 0 16px;
+    font-size: 18px;
+}
+
+.profile-panel dl {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+}
+
+.profile-panel dt {
+    margin-bottom: 4px;
+    color: var(--ink-soft);
+    font-size: 12px;
+}
+
+.profile-panel dd {
+    margin: 0;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+html.sidebar-collapsed .shell>.sidebar {
+    width: var(--sidebar-compact-width);
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+html.sidebar-collapsed .shell>.main {
+    margin-left: var(--sidebar-compact-width);
+}
+
+html.sidebar-collapsed .sidebar-brand-images,
+html.sidebar-collapsed .menu-label {
+    display: none;
+}
+
+html.sidebar-collapsed .sidebar-brand {
+    justify-content: center;
+}
+
+html.sidebar-collapsed .sidebar-toggle {
+    position: relative;
+}
+
+html.sidebar-collapsed .sidebar-toggle-logo {
+    display: block;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+html.sidebar-collapsed .sidebar-toggle .menu-icon {
+    position: absolute;
+    opacity: 0;
+}
+
+html.sidebar-collapsed .sidebar-toggle:hover .sidebar-toggle-logo,
+html.sidebar-collapsed .sidebar-toggle:focus-visible .sidebar-toggle-logo {
+    opacity: 0;
+}
+
+html.sidebar-collapsed .sidebar-toggle:hover .menu-icon,
+html.sidebar-collapsed .sidebar-toggle:focus-visible .menu-icon {
+    opacity: 1;
+}
+
+html.sidebar-collapsed .sidebar .nav-item {
+    justify-content: center;
+    padding-right: 0;
+    padding-left: 0;
+}
+
+@media (max-width: 760px) {
+    html.has-sidebar .shell>.main {
+        margin-left: var(--sidebar-compact-width);
+    }
+
+    html.has-sidebar:not(.sidebar-collapsed) .shell>.sidebar {
+        width: min(290px, calc(100vw - 24px));
+    }
+}
+/* Compensate for the Home page's 90% scale without changing sidebar width. */
+@media (min-width: 1200px) {
+    body.foodcast-home .shell>.sidebar {
+        height: calc(100dvh / 0.9);
+        min-height: calc(100dvh / 0.9);
+    }
+}
+/* Give non-Home pages the same sidebar proportions as Home. */
+@media (min-width: 1200px) {
+    body:not(.foodcast-home) .shell>.sidebar {
+        zoom: 0.9;
+
+        /* Compensate for zoom so its visible width stays 260px. */
+        width: calc(var(--sidebar-width) / 0.9);
+
+        /* Compensate for zoom so it still reaches the bottom. */
+        height: calc(100dvh / 0.9);
+        min-height: calc(100dvh / 0.9);
+    }
+}
+/* Correct the closed sidebar width on non-Home pages. */
+@media (min-width: 1200px) {
+    html.sidebar-collapsed body:not(.foodcast-home) .shell>.sidebar {
+        width: calc(var(--sidebar-compact-width) / 0.9);
+    }
+
+    html.sidebar-collapsed body:not(.foodcast-home) .shell>.main {
+        margin-left: var(--sidebar-compact-width);
+    }
+}
+.profile-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 20px;
+    padding: 0 16px;
+    color: #ffffff;
+    background: var(--green, #23834f);
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    box-sizing: border-box;
+}
+
+.profile-edit-button:hover {
+    filter: brightness(0.94);
+}
+
+.profile-edit-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+/* Compact main sidebar menu */
+.sidebar-navigation {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    margin-top: 0;
+}
+
+.sidebar-navigation .nav-item {
+    min-height: 49px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+/* Help Center and Sign out section */
+.sidebar-actions {
+    position: relative;
+    isolation: isolate;
+
+    display: grid;
+    align-content: start;
+    gap: 2px;
+
+    min-height: 245px;
+    margin-top: auto;
+    padding-top: 13px;
+    padding-bottom: 112px;
+
+    border-top: 1px solid rgba(108, 130, 114, 0.23);
+    overflow: hidden;
+}
+
+.sidebar-actions > a,
+.sidebar-actions > form {
+    position: relative;
+    z-index: 5;
+}
+
+.sidebar-actions form {
+    width: 100%;
+    margin: 0;
+}
+
+.sidebar-actions .nav-item {
+    min-height: 49px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+
+    color: #59655f;
+    font-weight: 700;
+}
+
+.sidebar-actions .nav-item:hover {
+    color: var(--green-dark);
+    background: rgba(222, 239, 226, 0.84);
+}
+
+.sidebar-actions .nav-item.active,
+.sidebar-actions .nav-item[aria-current="page"] {
+    color: var(--green-dark);
+    background: var(--green-light);
+}
+
+/* Decorative background */
+.sidebar-decoration {
+    position: absolute;
+    right: -22px;
+    bottom: -24px;
+    z-index: 1;
+
+    display: block;
+    width: 245px;
+    height: 135px;
+
+    color: #17693f;
+
+    background:
+        radial-gradient(
+            ellipse at 86% 100%,
+            rgba(58, 133, 78, 0.58) 0 38%,
+            transparent 39%
+        ),
+        radial-gradient(
+            ellipse at 52% 105%,
+            rgba(117, 177, 124, 0.52) 0 51%,
+            transparent 52%
+        ),
+        radial-gradient(
+            ellipse at 10% 110%,
+            rgba(220, 237, 211, 0.98) 0 62%,
+            transparent 63%
+        );
+
+    pointer-events: none;
+}
+
+/* Extra soft shape on the left */
+.sidebar-decoration::before {
+    content: "";
+    position: absolute;
+    left: -105px;
+    bottom: -14px;
+
+    width: 165px;
+    height: 100px;
+
+    background: rgba(224, 240, 216, 0.96);
+    border-radius: 55% 55% 0 0;
+}
+
+/* Bread illustration */
+.sidebar-decoration-food {
+    position: absolute;
+    left: 24px;
+    bottom: 36px;
+    z-index: 3;
+
+    display: block;
+    width: 70px;
+    height: 60px;
+
+    color: #17693f;
+    fill: rgba(255, 248, 225, 0.82);
+
+    filter:
+        drop-shadow(0 3px 5px rgba(19, 87, 51, 0.12));
+}
+
+/* Keep the links above the design */
+.sidebar-actions .menu-icon,
+.sidebar-actions .menu-label {
+    position: relative;
+    z-index: 6;
+}
+
+/* Prevent the sidebar contents from escaping */
+html.has-sidebar .shell > .sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+}
+
+/* Hide decoration when sidebar is closed */
+html.sidebar-collapsed .sidebar-navigation {
+    gap: 2px;
+}
+
+html.sidebar-collapsed .sidebar-actions {
+    min-height: auto;
+    padding-top: 13px;
+    padding-bottom: 13px;
+    overflow: visible;
+}
+
+html.sidebar-collapsed .sidebar-decoration {
+    display: none;
+}
+
+/* Reduce decoration on shorter screens */
+@media (max-height: 760px) {
+    .sidebar-navigation .nav-item,
+    .sidebar-actions .nav-item {
+        min-height: 45px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    .sidebar-actions {
+        min-height: 190px;
+        padding-bottom: 78px;
+    }
+
+    .sidebar-decoration {
+        bottom: -42px;
+        transform: scale(0.86);
+        transform-origin: right bottom;
+    }
+}
+
+/* Dark theme */
+html[data-theme="dark"] .sidebar-decoration {
+    opacity: 0.28;
+}
+/* Keep Help Center and Sign out at the lowest part */
+.sidebar-actions {
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: end;
+    gap: 2px;
+
+    min-height: 205px;
+    margin-top: auto;
+    padding: 72px 0 12px;
+
+    box-sizing: border-box;
+    border-top: 1px solid rgba(108, 130, 114, 0.23);
+}
+
+.sidebar-actions > a,
+.sidebar-actions > form {
+    width: 100%;
+}
+
+.sidebar-actions .nav-item {
+    width: 100%;
+    min-height: 48px;
+}
+
+/* Keep the decoration behind the two lower links */
+.sidebar-decoration {
+    top: 0;
+    right: -22px;
+    bottom: auto;
+    height: 150px;
+    opacity: 0.72;
+}
+
+.sidebar-decoration-food {
+    top: 18px;
+    bottom: auto;
+}
+
+/* Closed sidebar */
+html.sidebar-collapsed .sidebar-actions {
+    min-height: auto;
+    margin-top: auto;
+    padding: 12px 0;
+}
+
+html.sidebar-collapsed .sidebar-decoration {
+    display: none;
+}
+/* Remove the bread and repair the lower sidebar layout */
+.sidebar-decoration {
+    display: none !important;
+}
+
+.sidebar-actions {
+    margin-top: auto;
+    min-height: auto;
+    padding: 14px 0 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid rgba(108, 130, 114, 0.23);
+    background: transparent;
+}
+
+.sidebar-actions > a,
+.sidebar-actions > form,
+.sidebar-actions .nav-item {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+/* =========================================================
+   MOBILE BOTTOM NAVIGATION
+   ========================================================= */
+
+@media (max-width: 760px) {
+    html.has-sidebar {
+        --mobile-navigation-height: 72px;
+        padding-bottom: 0;
+    }
+
+    html.has-sidebar .shell {
+        display: block;
+        width: 100%;
+        min-height: 100dvh;
+    }
+
+    html.has-sidebar .shell > .main,
+    html.sidebar-collapsed .shell > .main {
+        width: 100%;
+        min-width: 0;
+        margin-left: 0 !important;
+        padding-bottom: calc(
+            var(--mobile-navigation-height)
+            + env(safe-area-inset-bottom)
+            + 12px
+        );
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    html.has-sidebar .shell > .sidebar,
+    html.has-sidebar:not(.sidebar-collapsed) .shell > .sidebar,
+    html.sidebar-collapsed .shell > .sidebar {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 200;
+
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+
+        width: 100%;
+        height: calc(
+            var(--mobile-navigation-height)
+            + env(safe-area-inset-bottom)
+        );
+        min-height: 0;
+        padding:
+            7px
+            8px
+            calc(7px + env(safe-area-inset-bottom));
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        background: var(--card, #f7f9f6);
+        border: 1px solid var(--border, #dce4de);
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -8px 28px rgba(27, 65, 40, 0.14);
+        box-sizing: border-box;
+        scrollbar-width: none;
+    }
+
+    html.has-sidebar .shell > .sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sidebar-brand {
+        display: none !important;
+    }
+
+    .sidebar-navigation,
+    html.sidebar-collapsed .sidebar-navigation {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 2px;
+        margin: 0;
+    }
+
+    .sidebar-actions,
+    html.sidebar-collapsed .sidebar-actions {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 2px;
+
+        width: auto;
+        min-height: 0;
+        margin: 0 0 0 4px;
+        padding: 0 0 0 4px;
+
+        overflow: visible;
+        background: transparent;
+        border-top: 0;
+        border-left: 1px solid var(--border, #dce4de);
+    }
+
+    .sidebar-actions > a,
+    .sidebar-actions > form {
+        width: auto;
+        flex: 0 0 auto;
+    }
+
+    .sidebar .nav-item,
+    html.sidebar-collapsed .sidebar .nav-item,
+    .sidebar-actions .nav-item {
+        display: grid;
+        place-items: center;
+
+        flex: 0 0 48px;
+        width: 48px;
+        min-width: 48px;
+        min-height: 52px;
+        height: 52px;
+        padding: 0;
+
+        border-radius: 15px;
+    }
+
+    .sidebar .nav-item.active,
+    .sidebar .nav-item[aria-current="page"] {
+        background: var(--green-light, #dcecdf);
+        box-shadow: none;
+    }
+
+    .sidebar .menu-icon {
+        flex: none;
+        width: 22px;
+        height: 22px;
+    }
+
+    .sidebar .menu-label,
+    html.sidebar-collapsed .sidebar .menu-label {
+        display: none;
+    }
+
+    .sidebar-decoration {
+        display: none !important;
+    }
+
+    .user-manual-button {
+        display: none !important;
+    }
+}

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Products | FoodCast AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='product_tools.css') }}">
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+<body class="foodcast-products">
+<div class="shell">
+    {% include 'business/sidebar.html' %}
+    <div class="main">
+    {% include "business/header.html" %}
+        <main class="content business-content">
+
+            {% for message in get_flashed_messages(category_filter=["product_success"]) %}
+            <div class="business-success" role="status">
+                <span aria-hidden="true">✓</span>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+
+            {% for category, message in get_flashed_messages(with_categories=true) %}
+            {% if category == "product_error" %}
+            <p class="business-error" role="alert">{{ message }}</p>
+            {% endif %}
+            {% endfor %}
+
+            {% for error in errors %}<p class="business-error" role="alert">{{ error }}</p>{% endfor %}
+
+            <section class="products-page-heading">
+                <div class="products-page-title">
+                    <span class="products-title-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 7h12l1 13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L6 7Z"></path>
+                            <path d="M9 7V5a3 3 0 0 1 6 0v2"></path>
+                        </svg>
+                    </span>
+                    <div>
+                        <h1>Products</h1>
+                        <p>Manage your products, prices, and stock information.</p>
+                    </div>
+                </div>
+
+                <div class="products-add-actions">
+                    <a href="{{ url_for('product_import') }}" class="btn btn-outline">Import Excel</a>
+                    <button type="button" class="btn btn-primary" data-open-add-product>
+                        <span aria-hidden="true">+</span> Add product
+                    </button>
+                </div>
+            </section>
+
+            <section class="products-stat-grid">
+                <article class="card products-stat-card">
+                    <span class="products-stat-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 8l-9-5-9 5 9 5 9-5Z"></path>
+                            <path d="M3 8v8l9 5 9-5V8"></path>
+                        </svg>
+                    </span>
+                    <div>
+                        <p>Total Products</p>
+                        <strong>{{ stock_summary.total }}</strong>
+                        <small>Active products</small>
+                    </div>
+                </article>
+
+                <article class="card products-stat-card">
+                    <span class="products-stat-icon products-stat-icon-green" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 8l-9-5-9 5 9 5 9-5Z"></path>
+                            <path d="M3 8v8l9 5 9-5V8"></path>
+                        </svg>
+                    </span>
+                    <div>
+                        <p>In Stock</p>
+                        <strong>{{ stock_summary.in_stock }}</strong>
+                        <small>Products available</small>
+                    </div>
+                </article>
+
+                <article class="card products-stat-card">
+                    <span class="products-stat-icon products-stat-icon-orange" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
+                            <path d="M12 9v4M12 17h.01"></path>
+                        </svg>
+                    </span>
+                    <div>
+                        <p>Low Stock</p>
+                        <strong>{{ stock_summary.low_stock }}</strong>
+                        <small>Needs restocking</small>
+                    </div>
+                </article>
+
+                <article class="card products-stat-card">
+                    <span class="products-stat-icon products-stat-icon-red" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="m4.9 4.9 14.2 14.2"></path>
+                        </svg>
+                    </span>
+                    <div>
+                        <p>Out of Stock</p>
+                        <strong>{{ stock_summary.out_of_stock }}</strong>
+                        <small>Currently unavailable</small>
+                    </div>
+                </article>
+            </section>
+
+            <section class="card products-filter-row">
+                <div class="products-filter-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="6"></circle>
+                        <path d="m20 20-4.2-4.2"></path>
+                    </svg>
+                    <input type="search" id="inline_product_search" placeholder="Search products..." aria-label="Search products">
+                </div>
+
+                <select id="category_filter" aria-label="Filter by category">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+
+                <select id="status_filter" aria-label="Filter by stock status">
+                    <option value="">All Stock Status</option>
+                    <option value="In Stock">In Stock</option>
+                    <option value="Low Stock">Low Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
+                </select>
+
+                <div class="products-sort">
+                    <span>Sort by</span>
+                    <select id="sort_by" aria-label="Sort products">
+                        <option value="name">Product Name</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="stock-asc">Stock: Low to High</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="card products-table-card">
+                <div class="tools-heading">
+                    <h2 class="section-title">Your products</h2>
+                
+                    <div class="products-table-toolbar">
+                        <span id="selected-products-count">0 selected</span>
+                
+                        <button type="button" id="bulk-edit-products" class="icon-btn" title="Edit selected product"
+                            aria-label="Edit selected product" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                            </svg>
+                        </button>
+                
+                        <button type="button" id="bulk-delete-products" class="icon-btn icon-btn-danger"
+                            title="Delete selected products" aria-label="Delete selected products" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 6h18"></path>
+                                <path d="M8 6V4h8v2"></path>
+                                <path d="M19 6l-1 14H6L5 6"></path>
+                                <path d="M10 11v5"></path>
+                                <path d="M14 11v5"></path>
+                            </svg>
+                        </button>
+                
+                        <a class="btn btn-outline" href="{{ url_for('export_products') }}">
+                            Export Excel
+                        </a>
+                    </div>
+                </div>
+
+                {% if products %}
+                <div class="table-scroll">
+                    <table id="products-table" class="products-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-products" aria-label="Select all products"></th>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Price (₱)</th>
+                                <th>Current Stock</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr data-product-row
+                                data-product-name="{{ product.product_name | lower }}"
+                                data-category="{{ product.category }}"
+                                data-status="{{ product.stock_status }}"
+                                data-price="{{ product.selling_price }}"
+data-stock="{{ product.available }}"
+data-product-id="{{ product.product_id }}"
+data-edit-url="{{ url_for('edit_product', product_id=product.product_id) }}">
+                                <td>
+                                    <input type="checkbox" class="product-row-select" value="{{ product.product_id }}"
+                                        aria-label="Select {{ product.product_name }}">
+                                </td>
+                                <td>
+                                    {{ product.product_name }}
+                                </td>
+                                <td><span class="category-badge">{{ product.category }}</span></td>
+                                <td>₱{{ '{:,.2f}'.format(product.selling_price) }}</td>
+                                <td>{{ '{:,.0f}'.format(product.available) }}</td>
+                                <td>
+                                    <span class="stock-status {{ product.status_class }}">
+                                        <i class="stock-status-dot" aria-hidden="true"></i>{{ product.stock_status }}
+                                    </span>
+                                </td>
+                                <td class="products-actions">
+                                    <a href="{{ url_for('edit_product', product_id=product.product_id) }}" class="icon-btn" aria-label="Edit {{ product.product_name }}" title="Edit">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                        </svg>
+                                    </a>
+                                    <button type="button" class="icon-btn icon-btn-danger" data-delete-product="{{ product.product_id }}" data-product-name="{{ product.product_name }}" aria-label="Delete {{ product.product_name }}" title="Delete">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                            <path d="M10 11v6M14 11v6"></path>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p id="product-search-empty" hidden>No products match your filters.</p>
+
+                <div class="products-pagination">
+                    <span id="products-pagination-summary"></span>
+                    <div class="products-pagination-buttons" id="products-pagination-buttons"></div>
+                </div>
+                {% else %}
+                <p>No products yet. Add one or import your Excel list.</p>
+                {% endif %}
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<dialog id="add-product-dialog" class="tools-dialog">
+    <h2>Add a product</h2>
+
+    <form method="post" action="{{ url_for('business_products') }}" class="tools-stack">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="product_name">Product name</label>
+        <input id="product_name" name="product_name" value="{{ values.product_name }}" maxlength="100" required>
+
+        <label id="unit-label">Selling unit</label>
+        <input type="hidden" name="selling_unit" id="chosen-unit" value="{{ values.selling_unit }}">
+        <details class="unit-picker" id="unit-picker">
+            <summary aria-labelledby="unit-label unit-choice">
+                <span id="unit-choice">{{ values.selling_unit or 'Choose a unit' }}</span>
+                <span aria-hidden="true">▼</span>
+            </summary>
+            <div class="unit-options">
+                {% for unit in units %}
+                <div class="unit-option">
+                    <button type="button" data-pick-unit="{{ unit.name }}">{{ unit.name }}</button>
+                    <button type="button" class="unit-x" data-delete-unit="{{ unit.unit_id }}" data-unit-name="{{ unit.name }}" aria-label="Delete {{ unit.name }}">×</button>
+                </div>
+                {% endfor %}
+                <button type="button" class="unit-add" data-open-units>＋ Add more</button>
+            </div>
+        </details>
+
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+            {% for category in categories %}
+            <option value="{{ category }}" {% if (values.category and values.category==category) or (not values.category and category=='Other') %}selected{% endif %}>
+                {{ category }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="selling_price">Price per unit (₱)</label>
+        <input type="number" id="selling_price" name="selling_price" value="{{ values.selling_price }}" min="0" max="99999999.99" step="0.01" required>
+
+        <div class="tools-buttons">
+            <button type="button" class="btn btn-outline" data-close-add-product>Cancel</button>
+            <button type="submit" class="btn btn-primary">Save product</button>
+        </div>
+    </form>
+
+    <p class="tools-help">Need to add many products at once? <a href="{{ url_for('product_import') }}">Import an Excel file</a> instead.</p>
+</dialog>
+
+{% if errors %}
+<script>document.getElementById('add-product-dialog').showModal();</script>
+{% endif %}
+
+<form id="delete-product-form" method="post" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<form id="bulk-delete-products-form" method="post" action="{{ url_for('bulk_delete_products') }}" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div id="bulk-delete-product-inputs"></div>
+</form>
+
+{% include 'business/unit_manager.html' %}
+<script src="{{ url_for('product_tools_script') }}"></script>
+</body>
+</html>

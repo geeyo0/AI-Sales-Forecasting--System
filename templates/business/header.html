@@ -1,0 +1,259 @@
+{% macro weather_svg(name, extra_class="") %}
+<svg class="header-weather-svg {{ extra_class }}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+    {% if name == "sun" %}
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+
+    {% elif name == "cloud-sun" %}
+    <path d="M7 7a4 4 0 0 1 7.6-1.7M16 3v2M20 7h-2"></path>
+    <path d="M6.5 18H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 18Z"></path>
+
+    {% elif name == "fog" %}
+    <path d="M6.5 15H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 15Z"></path>
+    <path d="M5 19h14M8 22h8"></path>
+
+    {% elif name == "drizzle" %}
+    <path d="M6.5 15H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 15Z"></path>
+    <path d="M8 18l-1 2M13 18l-1 2M18 18l-1 2"></path>
+
+    {% elif name == "rain" %}
+    <path d="M6.5 14H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 14Z"></path>
+    <path d="M8 17l-2 4M13 17l-2 4M18 17l-2 4"></path>
+
+    {% elif name == "storm" %}
+    <path d="M6.5 14H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 14Z"></path>
+    <path d="M13 15l-3 4h3l-2 3M18 17l-2 4"></path>
+
+    {% else %}
+    <path d="M6.5 18H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 18Z"></path>
+    {% endif %}
+</svg>
+{% endmacro %}
+
+{% macro profile_menu() %}
+<details class="home-profile">
+    <summary>
+        <span class="avatar" aria-hidden="true">
+            {{ g.user["username"][0] | upper }}
+        </span>
+    </summary>
+
+    <section class="profile-panel" aria-label="My profile">
+        <h2>My profile</h2>
+
+        <dl>
+            <div>
+                <dt>Business name</dt>
+                <dd>{{ business["business_name"] }}</dd>
+            </div>
+
+            <div>
+                <dt>Business type</dt>
+                <dd>{{ business["business_type"] }}</dd>
+            </div>
+
+            <div>
+                <dt>Username</dt>
+                <dd>{{ g.user["username"] }}</dd>
+            </div>
+
+            <div>
+                <dt>Member since</dt>
+                <dd>{{ business["created_at"].strftime("%B %d, %Y") }}</dd>
+            </div>
+        </dl>
+
+    <a href="{{ url_for('edit_business_profile') }}" class="profile-edit-button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 20H5a1 1 0 0 1-1-1v-7"></path>
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L10 16l-4 1 1-4Z"></path>
+        </svg>
+    
+        <span>Edit profile</span>
+    </a>
+
+    </section>
+</details>
+{% endmacro %}
+
+{% macro theme_toggle() %}
+<button id="theme-toggle" type="button" class="theme-toggle" aria-label="Switch color mode" aria-pressed="false"
+    title="Turn dark mode on">
+    <span class="theme-toggle-text">Light mode</span>
+
+    <span class="theme-toggle-icon" aria-hidden="true">
+        <svg class="theme-sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41">
+            </path>
+        </svg>
+
+        <svg class="theme-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round">
+            <path d="M20.8 13.1A9 9 0 0 1 10.9 3.2 9 9 0 1 0 20.8 13.1Z"></path>
+        </svg>
+    </span>
+</button>
+{% endmacro %}
+
+{% macro home_top_menus() %}
+<details class="home-top-menu">
+    <summary aria-label="Quick actions" title="Quick actions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+        </svg>
+    </summary>
+
+    <section class="home-top-panel home-quick-panel" aria-label="Quick actions">
+        <h2>Quick actions</h2>
+
+        <a href="{{ url_for('business_sales') }}"><span aria-hidden="true">＋</span>Record sales</a>
+        <a href="{{ url_for('business_products') }}"><span aria-hidden="true">□</span>Add a product</a>
+        <a href="{{ url_for('business_inventory') }}"><span aria-hidden="true">▣</span>Update stock</a>
+        <a href="{{ url_for('business_tips') }}"><span aria-hidden="true">✦</span>View business tips</a>
+    </section>
+</details>
+
+<details class="home-top-menu home-weather-menu">
+    <summary aria-label="Weather forecast" title="Weather forecast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M17.5 18.5H7.8a4.3 4.3 0 1 1 .7-8.55A5.2 5.2 0 0 1 18.1 12a3.25 3.25 0 0 1-.6 6.5Z"></path>
+        </svg>
+    </summary>
+
+<section class="home-top-panel home-weather-panel" aria-label="Today's local weather">
+    <div class="home-weather-topline">
+        <h2>
+            <svg class="home-weather-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                <circle cx="12" cy="10" r="2.5"></circle>
+            </svg>
+
+            {% if business["location_name"] %}
+            {{ business["location_name"] }}
+            {% else %}
+            Your business location
+            {% endif %}
+        </h2>
+
+        <a href="{{ url_for('business_forecasting') }}" class="home-weather-location" aria-label="Update location"
+            title="Update location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="7"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+            </svg>
+        </a>
+    </div>
+
+    {% if weather %}
+    <article class="home-top-weather-today">
+        <span class="home-top-weather-icon">
+            {{ weather_svg(weather["today"]["icon"]) }}
+        </span>
+
+        <div>
+            <small>Today</small>
+            <strong>{{ weather["today"]["temperature"] }}°</strong>
+            <p>{{ weather["today"]["condition"] }}</p>
+            <span>
+                Rain: {{ weather["today"]["rain_chance"] }}%
+                · Wind: {{ weather["today"]["wind"] }} km/h
+            </span>
+        </div>
+    </article>
+
+    <p class="home-top-weather-advice">
+        {{ weather["advice"] }}
+    </p>
+
+    {% elif weather_error %}
+    <p class="home-top-weather-message">{{ weather_error }}</p>
+
+    {% else %}
+    <p class="home-top-weather-message">
+        Set your business location to see today’s local weather.
+    </p>
+    {% endif %}
+</section>
+</details>
+{% endmacro %}
+
+<header class="foodcast-global-topbar">
+    <div class="header-left-actions">
+        {{ home_top_menus() }}
+    </div>
+
+    {% if g.user["username"] == "french_bakery_demo" %}
+    <div
+        class="demonstration-data-label"
+        role="note"
+        aria-label="Demonstration account using sample data"
+    >
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+        >
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 11v6M12 7h.01"></path>
+        </svg>
+
+        <span>
+            <strong>Demonstration account</strong>
+            <small>Products, sales and stock are sample records</small>
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="header-account-actions">
+        {{ theme_toggle() }}
+        {{ profile_menu() }}
+    </div>
+</header>
+
+<a
+    href="{{ url_for('user_manual') }}"
+    class="user-manual-button"
+    aria-label="Open Help Center"
+    title="Help Center"
+>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H12v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z"></path>
+        <path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H12v17h4.5A3.5 3.5 0 0 1 20 22V5.5Z"></path>
+        <circle cx="12" cy="6.5" r="1.4"></circle>
+        <path d="M12 10v4"></path>
+    </svg>
+</a>
+
+<script>
+    (function () {
+        const profile = document.querySelector(".home-profile");
+
+        if (!profile) return;
+
+        document.addEventListener("click", function (event) {
+            if (!profile.contains(event.target)) profile.open = false;
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && profile.open) {
+                profile.open = false;
+                profile.querySelector("summary").focus();
+            }
+        });
+    })();
+</script>

@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Sales | FoodCast AI</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='product_tools.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sales.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+
+<body class="foodcast-sales">
+    <div class="shell">
+        {% include "business/sidebar.html" %}
+
+        <div class="main">
+            {% include "business/header.html" %}
+
+            <main class="content sales-page">
+
+                {% for message in get_flashed_messages(category_filter=["sales_success"]) %}
+                <div class="business-success" role="status">
+                    <span aria-hidden="true">✓</span>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+
+                            <section class="products-page-heading">
+                                <div class="products-page-title">
+                                    <span class="products-title-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"></path>
+                                            <path d="M9 8h6M9 12h6M9 16h3"></path>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <h1>Sales</h1>
+                                        <p>Record and review your daily sales.</p>
+                                    </div>
+                                </div>
+                            
+                                <div class="products-add-actions">
+                                    <a href="{{ url_for('business_forecasting') }}" class="btn btn-outline">
+                                        View sales forecast
+                                    </a>
+                            
+                                    {% if products %}
+                                    <button type="button" class="btn btn-primary" data-open-record-sale>
+                                        <span aria-hidden="true">+</span> Record a sale
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </section>
+                            
+                            {% if not products %}
+                            <section class="card">
+                                <div class="sales-empty">
+                                    <p>Add your products before recording sales.</p>
+                                    <a href="{{ url_for('business_products') }}" class="btn btn-primary">Add a product</a>
+                                </div>
+                            </section>
+                            {% endif %}
+                            
+                            {% if not filter_error %}
+                            <section class="products-stat-grid">
+                                <article class="card products-stat-card">
+                                    <span class="products-stat-icon products-stat-icon-green" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <path
+                                                d="M12 7v10M9.5 9.5c0-1.4 1.2-2.5 2.7-2.5s2.7 1 2.7 2.2c0 3-5.4 1.8-5.4 4.8 0 1.3 1.2 2.3 2.7 2.3s2.7-1 2.7-2.3">
+                                            </path>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <p>Total Sales</p>
+                                        <strong>₱{{ "{:,.2f}".format(summary["total_sales"]) }}</strong>
+                                        {% if summary["sales_change_pct"] is not none %}
+                                        <small
+                                            class="stat-change {{ 'stat-change-up' if summary['sales_change_pct'] >= 0 else 'stat-change-down' }}">
+                                            {{ '▲' if summary['sales_change_pct'] >= 0 else '▼' }}
+                                            {{ "%.0f"|format(summary['sales_change_pct'] if summary['sales_change_pct'] >= 0 else
+                                            -summary['sales_change_pct']) }}% vs previous period
+                                        </small>
+                                        {% else %}
+                                        <small>vs previous period</small>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            
+                                <article class="card products-stat-card">
+                                    <span class="products-stat-icon products-stat-icon-blue" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M21 8l-9-5-9 5 9 5 9-5Z"></path>
+                                            <path d="M3 8v8l9 5 9-5V8"></path>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <p>Total Units Sold</p>
+                                        <strong>{{ "{:,.0f}".format(summary["total_units"]) }}</strong>
+                                        {% if summary["units_change_pct"] is not none %}
+                                        <small
+                                            class="stat-change {{ 'stat-change-up' if summary['units_change_pct'] >= 0 else 'stat-change-down' }}">
+                                            {{ '▲' if summary['units_change_pct'] >= 0 else '▼' }}
+                                            {{ "%.0f"|format(summary['units_change_pct'] if summary['units_change_pct'] >= 0 else
+                                            -summary['units_change_pct']) }}% vs previous period
+                                        </small>
+                                        {% else %}
+                                        <small>vs previous period</small>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            
+                                <article class="card products-stat-card">
+                                    <span class="products-stat-icon products-stat-icon-orange" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"></path>
+                                            <path d="M5 4H3v2a4 4 0 0 0 4 4M19 4h2v2a4 4 0 0 1-4 4"></path>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <p>Best-Selling Product</p>
+                                        <strong>{{ summary["best_seller_name"] or "—" }}</strong>
+                                        <small>
+                                            {% if summary["best_seller_name"] %}
+                                            {{ "{:,.0f}".format(summary["best_seller_units"]) }} pcs sold
+                                            {% else %}
+                                            No sales in this period
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </article>
+                            
+                                <article class="card products-stat-card">
+                                    <span class="products-stat-icon products-stat-icon-red" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M3 17l6-6 4 4 8-8"></path>
+                                            <path d="M15 7h6v6"></path>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <p>Average Daily Sales</p>
+                                        <strong>₱{{ "{:,.2f}".format(summary["average_daily_sales"]) }}</strong>
+                                        {% if summary["average_daily_change_pct"] is not none %}
+                                        <small
+                                            class="stat-change {{ 'stat-change-up' if summary['average_daily_change_pct'] >= 0 else 'stat-change-down' }}">
+                                            {{ '▲' if summary['average_daily_change_pct'] >= 0 else '▼' }}
+                                            {{ "%.0f"|format(summary['average_daily_change_pct'] if summary['average_daily_change_pct'] >= 0 else
+                                            -summary['average_daily_change_pct']) }}% vs previous period
+                                        </small>
+                                        {% else %}
+                                        <small>vs previous period</small>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            </section>
+                            {% endif %}
+                            
+                                <section class="card sales-filter-card">
+                                    <div class="sales-search-box">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <circle cx="11" cy="11" r="7"></circle>
+                                            <path d="M16 16L21 21"></path>
+                                        </svg>
+                                
+                                        <input id="sales_live_search" type="search" placeholder="Search product name..." autocomplete="off"
+                                            aria-label="Search sales">
+                                    </div>
+                                
+                                    <form method="get" action="{{ url_for('business_sales', _anchor='your-sales') }}" class="sales-filter-form">
+                                        <div class="sales-date-group">
+                                            <span class="sales-filter-label">Date range</span>
+                                
+                                            <div class="sales-date-row">
+                                                <label class="sales-date-box" data-date-trigger tabindex="0" role="button">
+                                                    <span class="sales-date-icon">
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                                                            <path d="M8 3V7M16 3V7M3 10H21"></path>
+                                                            <path d="M8 14H8.01M12 14H12.01M16 14H16.01"></path>
+                                                        </svg>
+                                                    </span>
+                                
+                                                    <span class="sales-date-copy">
+                                                        <span class="sales-date-name">From</span>
+                                                        <span class="sales-date-value" id="start-date-display">
+                                                            Choose date
+                                                        </span>
+                                                    </span>
+                                
+                                                    <input class="sales-hidden-date" type="date" id="filter-start-date" name="start_date"
+                                                        value="{{ filters['start_date'] }}" aria-label="Choose starting date">
+                                                </label>
+                                
+                                                <span class="sales-range-divider" aria-hidden="true">–</span>
+                                
+                                                <label class="sales-date-box" data-date-trigger tabindex="0" role="button">
+                                                    <span class="sales-date-icon">
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                                                            <path d="M8 3V7M16 3V7M3 10H21"></path>
+                                                            <path d="M8 14H8.01M12 14H12.01M16 14H16.01"></path>
+                                                        </svg>
+                                                    </span>
+                                
+                                                    <span class="sales-date-copy">
+                                                        <span class="sales-date-name">To</span>
+                                                        <span class="sales-date-value" id="end-date-display">
+                                                            Choose date
+                                                        </span>
+                                                    </span>
+                                
+                                                    <input class="sales-hidden-date" type="date" id="filter-end-date" name="end_date" value="{{ filters['end_date'] }}"
+                                                        aria-label="Choose ending date">
+                                                </label>
+                                            </div>
+                                        </div>
+                                
+                                        <button type="submit" class="btn btn-primary sales-filter-button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M4 5H20L14 12V18L10 20V12L4 5Z"></path>
+                                            </svg>
+                                            <span>Apply filter</span>
+                                        </button>
+                                
+                                        <a href="{{ url_for('business_sales', _anchor='your-sales') }}" class="btn btn-outline sales-show-all-button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                                                <path d="M8 3V7M16 3V7M3 10H21"></path>
+                                            </svg>
+                                            <span>Show all dates</span>
+                                        </a>
+                                
+                                        <span class="sales-action-divider" aria-hidden="true"></span>
+                                
+                                        <button type="button" id="clear-sales-search-btn" class="sales-clear-button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M4 10A8 8 0 1 1 6.3 17.7"></path>
+                                                <path d="M4 4V10H10"></path>
+                                            </svg>
+                                            <span>Clear</span>
+                                        </button>
+                                    </form>
+                                </section>
+                                
+                            
+                            <section id="your-sales" class="card products-table-card" aria-labelledby="your-sales-title">
+                                <div class="tools-heading">
+                                    <h2 id="your-sales-title" class="section-title">Your sales</h2>
+                                
+                                    {% if not filter_error and sales %}
+                                    <div class="products-table-toolbar">
+                                        <span id="selected-sales-count">0 selected</span>
+                                
+                                        <button type="button" id="bulk-edit-sales" class="icon-btn" title="Edit selected sales"
+                                            aria-label="Edit selected sales" disabled>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                                            </svg>
+                                        </button>
+                                
+                                        <button type="button" id="bulk-delete-sales" class="icon-btn icon-btn-danger" title="Delete selected sales"
+                                            aria-label="Delete selected sales" disabled>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M3 6h18"></path>
+                                                <path d="M8 6V4h8v2"></path>
+                                                <path d="M19 6l-1 14H6L5 6"></path>
+                                                <path d="M10 11v5"></path>
+                                                <path d="M14 11v5"></path>
+                                            </svg>
+                                        </button>
+                                
+                                        <a class="btn btn-outline" href="{{ url_for(
+                                                'export_sales',
+                                                start_date=filters['start_date'],
+                                                end_date=filters['end_date'],
+                                                search=filters['search']
+                                            ) }}" title="Download matching sales as a CSV file">
+                                            Download sales
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            
+                                {% if filter_error %}
+                                <p class="business-error" role="alert">
+                                    {{ filter_error }}
+                                </p>
+                                {% else %}
+                                {% if sales %}
+                                <div class="table-scroll">
+                                    <table id="sales-table" class="products-table">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">
+                                                <input type="checkbox" id="select-all-sales" aria-label="Select all sales">
+                                            </th>
+                                        
+                                            <th scope="col"><button type="button" class="sort-header" data-sort-key="date">Date <span
+                                                        aria-hidden="true">↕</span></button></th>
+                                                <th scope="col"><button type="button" class="sort-header" data-sort-key="product">Product <span aria-hidden="true">↕</span></button></th>
+                                                <th scope="col">Quantity Sold</th>
+                                                <th scope="col">Unit Price</th>
+                                                <th scope="col"><button type="button" class="sort-header" data-sort-key="total">Total Sales <span aria-hidden="true">↕</span></button></th>
+                                                <th scope="col">Action</th>
+                                            </tr>
+                                        </thead>
+                            
+                                        <tbody>
+                                            {% for sale in sales %}
+                                            <tr data-sale-row data-date="{{ sale['sale_date'].isoformat() }}" data-product="{{ sale['product_name'] | lower }}"
+                                                data-total="{{ sale['sales_amount'] }}" data-sale-id="{{ sale['sale_id'] }}"
+                                                data-edit-url="{{ url_for('edit_sale', sale_id=sale['sale_id']) }}">
+                                            
+                                                <td>
+                                                    <input type="checkbox" class="sale-row-select" value="{{ sale['sale_id'] }}"
+                                                        aria-label="Select {{ sale['product_name'] }} sale">
+                                                </td>
+                                            
+                                                <td>{{ sale["sale_date"].strftime("%b %d, %Y") }}</td>
+                            
+                                                <td>
+                                                    {{ sale["product_name"] }}
+                                                </td>
+                            
+                                                <td>
+                                                    {{ "{:,.0f}".format(sale["quantity_sold"]) }}
+                                                    {{ sale["selling_unit"] }}
+                                                </td>
+
+                                                <td class="sales-money">
+                                                    ₱{{ "{:,.2f}".format(sale["unit_price"]) }}
+                                                </td>
+                            
+                                                <td class="sales-money">
+                                                    ₱{{ "{:,.2f}".format(sale["sales_amount"]) }}
+                                                </td>
+                            
+                                                <td class="products-actions">
+                                                    <a href="{{ url_for('edit_sale', sale_id=sale['sale_id']) }}" class="icon-btn"
+                                                        aria-label="Edit {{ sale['product_name'] }} sales for {{ sale['sale_date'].strftime('%B %d, %Y') }}"
+                                                        title="Edit">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                                            stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M12 20h9"></path>
+                                                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                        </svg>
+                                                    </a>
+
+                                                    <button type="button" class="icon-btn icon-btn-danger" data-delete-sale="{{ sale['sale_id'] }}"
+                                                        data-product-name="{{ sale['product_name'] }}"
+                                                        aria-label="Delete {{ sale['product_name'] }} sales for {{ sale['sale_date'].strftime('%B %d, %Y') }}"
+                                                        title="Delete">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                                            stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M3 6h18"></path>
+                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                            <path d="M10 11v6M14 11v6"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            
+                                <p id="sales-search-empty" hidden>No saved sales match your search.</p>
+                            
+                                <div class="products-pagination">
+                                    <span class="sales-help">
+                                        {% if summary["record_count"] > 50 %}
+                                        Showing the latest 50 entries.
+                                        The total and download include all entries for these dates.
+                                        {% else %}
+                                        Latest dates appear first.
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% else %}
+                                <div class="sales-empty">
+                                    {% if filters['start_date'] or filters['end_date'] %}
+                                    <p>
+                                        No sales found
+                                        {% if filters['search'] %}
+                                        for "{{ filters['search'] }}"
+                                        {% endif %}
+                                        in these dates.
+                                    </p>
+                                    <a href="{{ url_for('business_sales', _anchor='your-sales') }}" class="sales-text-link">
+                                        Show all dates
+                                    </a>
+                                    {% else %}
+                                    <p>No sales saved yet.</p>
+                                    <p class="sales-help">Your entries will appear here after you save them.</p>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% endif %}
+                            </section>
+            </main>
+        </div>
+        </div>
+        
+        <dialog id="record-sale-dialog" class="tools-dialog">
+            <h2>Record sales</h2>
+        
+            <p class="tools-help">Add the total sold for one product on one day.</p>
+        
+            {% if error %}
+            <p class="business-error" role="alert">{{ error }}</p>
+            {% endif %}
+        
+            {% if products %}
+            <form method="post" action="{{ url_for('business_sales') }}" class="tools-stack">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+                <label for="sale_date">Date</label>
+                <input type="date" id="sale_date" name="sale_date" value="{{ values['sale_date'] }}" max="{{ today }}" required>
+        
+                <label for="product_id">Product</label>
+                <select id="product_id" name="product_id" required>
+                    <option value="">Choose a product</option>
+        
+                    {% for product in products %}
+                    <option value="{{ product['product_id'] }}" data-price="{{ product['selling_price'] }}" {% if
+                        values['product_id']==product['product_id']|string %} selected {% endif %}>
+                        {{ product["product_name"] }}
+                        — ₱{{ "{:,.2f}".format(product["selling_price"]) }}
+                        / {{ product["selling_unit"] }}
+                    </option>
+                    {% endfor %}
+                </select>
+        
+                <label for="quantity_sold">Number of Products Sold</label>
+                <input type="number" id="quantity_sold" name="quantity_sold" value="{{ values['quantity_sold'] }}" min="0"
+                    max="2147483647" step="1" required>
+        
+                <label for="sales_amount">Total sales (₱)</label>
+                <input type="number" id="sales_amount" name="sales_amount" value="{{ values['sales_amount'] }}" step="0.01"
+                    placeholder="Calculated automatically" aria-describedby="sales-amount-help" readonly>
+                <p id="sales-amount-help" class="tools-help">
+                    Total sales is calculated using the quantity and your product's current price.
+                </p>
+        
+                <div class="tools-buttons">
+                    <button type="button" class="btn btn-outline" data-close-record-sale>Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save sales</button>
+                </div>
+            </form>
+        
+            <p class="tools-help">
+                If you already saved this product's sales for that date, use Edit in the list below.
+            </p>
+            {% endif %}
+        </dialog>
+        
+        {% if error %}
+        <script>document.getElementById('record-sale-dialog').showModal();</script>
+        {% endif %}
+        
+        <script>
+            (function () {
+                const dialog = document.getElementById("record-sale-dialog");
+                const openButton = document.querySelector("[data-open-record-sale]");
+                const closeButton = document.querySelector("[data-close-record-sale]");
+
+                if (!dialog || !openButton) return;
+
+                openButton.addEventListener("click", function () {
+                    dialog.showModal();
+                });
+
+                if (closeButton) {
+                    closeButton.addEventListener("click", function () {
+                        dialog.close();
+                    });
+                }
+            })();
+        </script>
+        
+        <script>
+            (function () {
+                const product = document.getElementById("product_id");
+        const quantity = document.getElementById("quantity_sold");
+        const total = document.getElementById("sales_amount");
+
+        if (!product || !quantity || !total) return;
+
+        function calculateTotal() {
+            total.value = "";
+            quantity.setCustomValidity("");
+
+            const option = product.selectedOptions[0];
+            const priceText = option?.dataset.price;
+
+            if (!priceText || quantity.value.trim() === "") return;
+
+            const count = Number(quantity.value);
+            const priceInCentavos = Math.round(Number(priceText) * 100);
+            const maximumTotal = 999999999999;
+
+            if (
+                !Number.isInteger(count) ||
+                count < 0 ||
+                count > 2147483647 ||
+                !Number.isSafeInteger(priceInCentavos) ||
+                priceInCentavos < 0
+            ) {
+                return;
+            }
+
+            if (
+                priceInCentavos > 0 &&
+                count > Math.floor(maximumTotal / priceInCentavos)
+            ) {
+                quantity.setCustomValidity(
+                    "The total is too large. Please check the quantity."
+                );
+                return;
+            }
+
+            total.value = ((count * priceInCentavos) / 100).toFixed(2);
+        }
+
+        product.addEventListener("change", calculateTotal);
+        quantity.addEventListener("input", calculateTotal);
+        window.addEventListener("pageshow", calculateTotal);
+
+        calculateTotal();
+    })();
+</script>
+
+<script>
+    (function () {
+        const input = document.getElementById("sales_live_search");
+        const clearButton = document.getElementById("clear-sales-live-search");
+        const table = document.getElementById("sales-table");
+
+        if (!input || !clearButton || !table) return;
+
+        const rows = table.querySelectorAll("tbody tr");
+
+        function filterSales() {
+            const text = input.value.trim().toLowerCase();
+            let matches = 0;
+
+            rows.forEach(function (row) {
+                const matchesSearch = row.textContent.toLowerCase().includes(text);
+                row.hidden = !matchesSearch;
+
+                if (matchesSearch) matches += 1;
+            });
+
+            clearButton.hidden = text.length === 0;
+            document.body.classList.toggle("sales-search-active", text.length > 0);
+
+            const emptyMessage = document.getElementById("sales-search-empty");
+            if (emptyMessage) {
+                emptyMessage.hidden = text.length === 0 || matches > 0;
+            }
+        }
+
+        input.addEventListener("input", filterSales);
+
+        clearButton.addEventListener("click", function () {
+            input.value = "";
+            input.focus();
+            filterSales();
+        });
+    })();
+</script>
+
+<dialog id="sale-delete-confirm" class="tools-dialog">
+    <h2>Delete this sale?</h2>
+    <p class="tools-help" id="sale-delete-message"></p>
+    <div class="tools-buttons">
+        <button type="button" class="btn btn-outline" id="sale-delete-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-danger-solid" id="sale-delete-confirm-btn">Delete</button>
+    </div>
+</dialog>
+
+<form id="delete-sale-form" method="post" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<form
+    id="bulk-delete-sales-form"
+    method="post"
+    action="{{ url_for('bulk_delete_sales') }}"
+    hidden
+>
+    <input
+        type="hidden"
+        name="csrf_token"
+        value="{{ csrf_token() }}"
+    >
+
+    <div id="bulk-delete-sales-inputs"></div>
+</form>
+
+<script>
+    (function () {
+        const dialog = document.getElementById("sale-delete-confirm");
+        const message = document.getElementById("sale-delete-message");
+        const cancelBtn = document.getElementById("sale-delete-cancel");
+        const confirmBtn = document.getElementById("sale-delete-confirm-btn");
+        const form = document.getElementById("delete-sale-form");
+        let targetId = null;
+
+        document.addEventListener("click", function (event) {
+            const trigger = event.target.closest("[data-delete-sale]");
+            if (!trigger) return;
+
+            targetId = trigger.dataset.deleteSale;
+            message.textContent =
+                `Delete the sales record for "${trigger.dataset.productName}"? This cannot be undone.`;
+            dialog.showModal();
+        });
+
+        cancelBtn.addEventListener("click", function () {
+            dialog.close();
+            targetId = null;
+        });
+
+        confirmBtn.addEventListener("click", function () {
+            if (!targetId) return;
+            form.action = `/business/sales/${targetId}/delete`;
+            form.requestSubmit();
+        });
+    })();
+</script>
+
+<script>
+    (function () {
+        const selectAll = document.getElementById("select-all-sales");
+        const saleCheckboxes = Array.from(
+            document.querySelectorAll(".sale-row-select")
+        );
+        const editButton = document.getElementById("bulk-edit-sales");
+        const deleteButton = document.getElementById("bulk-delete-sales");
+        const selectedCount = document.getElementById(
+            "selected-sales-count"
+        );
+        const deleteForm = document.getElementById(
+            "bulk-delete-sales-form"
+        );
+        const deleteInputs = document.getElementById(
+            "bulk-delete-sales-inputs"
+        );
+        const confirmDialog = document.getElementById(
+            "sale-delete-confirm"
+        );
+        const confirmMessage = document.getElementById(
+            "sale-delete-message"
+        );
+        const confirmButton = document.getElementById(
+            "sale-delete-confirm-btn"
+        );
+
+        let bulkDeletePending = false;
+
+        function selectedRows() {
+            return saleCheckboxes
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.closest("[data-sale-row]"))
+                .filter(Boolean);
+        }
+
+        function updateActions() {
+            const count = selectedRows().length;
+
+            if (selectedCount) {
+                selectedCount.textContent = `${count} selected`;
+            }
+
+            if (editButton) {
+                editButton.disabled = count === 0;
+                editButton.title = count > 1
+                    ? `Edit ${count} selected sales`
+                    : "Edit selected sale";
+            }
+
+            if (deleteButton) {
+                deleteButton.disabled = count === 0;
+            }
+
+            if (selectAll) {
+                selectAll.checked =
+                    saleCheckboxes.length > 0
+                    && count === saleCheckboxes.length;
+
+                selectAll.indeterminate =
+                    count > 0
+                    && count < saleCheckboxes.length;
+            }
+        }
+
+        selectAll?.addEventListener("change", function () {
+            saleCheckboxes.forEach(function (checkbox) {
+                const row = checkbox.closest("[data-sale-row]");
+
+                /*
+                 * Select only rows currently displayed by the
+                 * Sales search.
+                 */
+                if (row && !row.hidden) {
+                    checkbox.checked = selectAll.checked;
+                }
+            });
+
+            updateActions();
+        });
+
+        saleCheckboxes.forEach(function (checkbox) {
+            checkbox.addEventListener("change", updateActions);
+        });
+
+        editButton?.addEventListener("click", function () {
+            const rows = selectedRows();
+
+            if (rows.length === 0) {
+                return;
+            }
+
+            const parameters = new URLSearchParams();
+
+            rows.forEach(function (row) {
+                parameters.append("sale_id", row.dataset.saleId);
+            });
+
+            window.location.href =
+                `/business/sales/bulk-edit?${parameters.toString()}`;
+        });
+
+        deleteButton?.addEventListener("click", function () {
+            const rows = selectedRows();
+
+            if (rows.length === 0) {
+                return;
+            }
+
+            bulkDeletePending = true;
+
+            confirmMessage.textContent =
+                `Delete ${rows.length} selected sales records? `
+                + "This cannot be undone.";
+
+            confirmDialog.showModal();
+        });
+
+        /*
+         * This listener runs before the existing confirmation
+         * listener submits the individual-delete form.
+         */
+        confirmButton?.addEventListener(
+            "click",
+            function (event) {
+                if (!bulkDeletePending) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                const rows = selectedRows();
+
+                if (
+                    rows.length === 0
+                    || !deleteForm
+                    || !deleteInputs
+                ) {
+                    return;
+                }
+
+                deleteInputs.replaceChildren();
+
+                rows.forEach(function (row) {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "sale_id";
+                    input.value = row.dataset.saleId;
+                    deleteInputs.appendChild(input);
+                });
+
+                deleteForm.requestSubmit();
+            },
+            true
+        );
+
+        document.getElementById("sale-delete-cancel")
+            ?.addEventListener("click", function () {
+                bulkDeletePending = false;
+            });
+
+        updateActions();
+    })();
+</script>
+
+<script>
+    (function () {
+        const clearButton = document.getElementById("clear-sales-search-btn");
+        const searchInput = document.getElementById("sales_live_search");
+
+        if (!clearButton || !searchInput) return;
+
+        clearButton.addEventListener("click", function () {
+            searchInput.value = "";
+            searchInput.dispatchEvent(new Event("input"));
+            searchInput.focus();
+        });
+    })();
+</script>
+
+<script>
+    (function () {
+        const table = document.getElementById("sales-table");
+        if (!table) return;
+
+        const tbody = table.querySelector("tbody");
+        const headers = table.querySelectorAll("[data-sort-key]");
+        let currentKey = null;
+        let ascending = true;
+
+        headers.forEach(function (header) {
+            header.addEventListener("click", function () {
+                const key = header.dataset.sortKey;
+                ascending = currentKey === key ? !ascending : true;
+                currentKey = key;
+
+                const rows = Array.from(tbody.querySelectorAll("[data-sale-row]"));
+
+                rows.sort(function (a, b) {
+                    let valueA = a.dataset[key];
+                    let valueB = b.dataset[key];
+
+                    if (key === "total") {
+                        valueA = parseFloat(valueA);
+                        valueB = parseFloat(valueB);
+                    }
+
+                    if (valueA < valueB) return ascending ? -1 : 1;
+                    if (valueA > valueB) return ascending ? 1 : -1;
+                    return 0;
+                });
+
+                rows.forEach(function (row) {
+                    tbody.appendChild(row);
+                });
+            });
+        });
+    })();
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        function formatSalesDate(value) {
+            if (!value) {
+                return "Choose date";
+            }
+
+            const parts = value.split("-");
+
+            if (parts.length !== 3) {
+                return value;
+            }
+
+            return `${parts[1]}/${parts[2]}/${parts[0]}`;
+        }
+
+        function setupDatePicker(inputId, displayId) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+
+            if (!input || !display) {
+                return;
+            }
+
+            const trigger = input.closest("[data-date-trigger]");
+
+            if (!trigger) {
+                return;
+            }
+
+            function updateDisplay() {
+                display.textContent = formatSalesDate(input.value);
+            }
+
+            function openPicker(event) {
+                if (
+                    event.type === "keydown" &&
+                    event.key !== "Enter" &&
+                    event.key !== " "
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                input.focus({
+                    preventScroll: true
+                });
+
+                if (typeof input.showPicker === "function") {
+                    input.showPicker();
+                } else {
+                    input.click();
+                }
+            }
+
+            trigger.addEventListener("click", openPicker);
+            trigger.addEventListener("keydown", openPicker);
+            input.addEventListener("change", updateDisplay);
+            input.addEventListener("input", updateDisplay);
+
+            updateDisplay();
+        }
+
+        setupDatePicker(
+            "filter-start-date",
+            "start-date-display"
+        );
+
+        setupDatePicker(
+            "filter-end-date",
+            "end-date-display"
+        );
+    });
+</script>
+</body>
+
+</html>

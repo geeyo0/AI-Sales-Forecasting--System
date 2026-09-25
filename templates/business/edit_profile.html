@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Profile | FoodCast</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <script src="{{ url_for('theme_script') }}"></script>
+</head>
+<body class="profile-settings-body">
+{% macro icon(name) %}<svg viewBox="0 0 24 24" aria-hidden="true">
+{% if name=='back' %}<path d="M19 12H5m6 6-6-6 6-6"/>
+{% elif name=='shop' %}<path d="M4 10v10h16V10M3 4h18l-2 6H5L3 4Z"/><path d="M8 14h3v6m4-6h2"/>
+{% elif name=='user' %}<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+{% elif name=='mail' %}<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>
+{% elif name=='lock' %}<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/>
+{% elif name=='calendar' %}<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/>
+{% elif name=='eye' %}<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>
+{% elif name=='save' %}<path d="M5 3h12l3 3v15H4V3Z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>{% endif %}</svg>{% endmacro %}
+<main class="profile-settings-page">
+  <header class="profile-settings-hero">
+    <a class="profile-back-button" href="{{ url_for('business_dashboard') }}">{{ icon('back') }} Back to home</a>
+    <div><h1>Edit Profile</h1><p>Update your business and account information.</p></div>
+    <div class="profile-hero-art" aria-hidden="true"><span>Keep your<br>information up to date</span>{{ icon('shop') }}</div>
+  </header>
+  {% for message in get_flashed_messages(category_filter=['profile_success']) %}<div class="business-success" role="status">{{ message }}</div>{% endfor %}
+  {% for message in get_flashed_messages(category_filter=['profile_error']) %}<div class="business-error" role="alert">{{ message }}</div>{% endfor %}
+  {% if error %}<div class="business-error" role="alert">{{ error }}</div>{% endif %}
+  <div class="profile-settings-layout">
+    <aside class="profile-settings-sidebar">
+      <div class="profile-business-mark"><div class="profile-business-icon">{{ icon('shop') }}</div><h2>{{ business['business_name'] }}</h2><p>{{ business['business_type'] }}</p></div>
+      <nav class="profile-settings-nav"><a class="is-active" href="#profile-information">{{ icon('user') }} Profile Information</a><a href="#email-address">{{ icon('mail') }} Email Address</a><a href="#password">{{ icon('lock') }} Password</a></nav>
+      <div class="profile-member-card">{{ icon('calendar') }}<div><span>Member since</span><strong>{{ business['created_at'].strftime('%B %d, %Y') }}</strong></div></div>
+    </aside>
+    <div class="profile-settings-content">
+      <section class="profile-settings-card" id="profile-information">
+        <div class="profile-card-heading"><span>{{ icon('shop') }}</span><div><h2>Business Information</h2><p>Update your business details.</p></div></div>
+        <form id="profile-info-form" method="post" class="profile-info-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label><b>Business name</b><input name="business_name" maxlength="100" value="{{ values['business_name'] }}" required></label>
+          <label><b>Business type</b><select name="business_type" required>{% for option in ['Bakery','Carinderia','Food Stall'] %}<option value="{{ option }}" {% if values['business_type']==option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
+          <label class="profile-wide"><b>Username</b><input name="username" maxlength="50" value="{{ values['username'] }}" required><small>Your username cannot contain spaces.</small></label>
+        </form>
+      </section>
+      <section class="profile-settings-card" id="email-address">
+        <div class="profile-card-heading"><span>{{ icon('mail') }}</span><div><h2>Change Email Address</h2><p>Update the email address associated with your account.</p></div></div>
+        <form class="profile-inline-form" method="post" action="{{ url_for('change_business_email') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label><b>New email address</b><input name="email" type="email" value="{{ business['email'] or '' }}" required></label><button class="btn btn-primary">Send Code</button></form>
+        <p class="profile-field-note">A verification code will be sent to this email address.</p>
+        <form class="profile-inline-form" method="post" action="{{ url_for('verify_email_change') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label><b>Verification code</b><input name="verification_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit verification code" required></label><button class="btn btn-primary" {% if not session.get('pending_email_change') %}disabled{% endif %}>Verify Code</button></form>
+      </section>
+      <section class="profile-settings-card" id="password">
+        <div class="profile-card-heading"><span>{{ icon('lock') }}</span><div><h2>Change Password</h2><p>Keep your account secure by using a strong password.</p></div></div>
+        <form class="profile-password-form" method="post" action="{{ url_for('change_business_password') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="profile-wide"><b>Current password</b><span class="profile-password-input"><input name="current_password" type="password" required><button type="button" aria-label="Show password">{{ icon('eye') }}</button></span></label>
+          <label><b>New password</b><span class="profile-password-input"><input name="new_password" type="password" minlength="12" required><button type="button" aria-label="Show password">{{ icon('eye') }}</button></span></label>
+          <label><b>Confirm new password</b><span class="profile-password-input"><input name="confirm_password" type="password" minlength="12" required><button type="button" aria-label="Show password">{{ icon('eye') }}</button></span></label>
+          <small class="profile-wide">Use at least 12 characters with uppercase and lowercase letters, a number, and a symbol.</small><div class="profile-wide profile-password-action"><button class="btn btn-primary">Change password</button></div>
+        </form>
+      </section>
+      <footer class="profile-settings-actions"><a class="btn btn-outline" href="{{ url_for('business_dashboard') }}">Cancel</a><button class="btn btn-primary" form="profile-info-form">{{ icon('save') }} Save changes</button></footer>
+    </div>
+  </div>
+</main>
+<script>document.querySelectorAll('.profile-password-input button').forEach(function(b){b.addEventListener('click',function(){const i=b.parentElement.querySelector('input');i.type=i.type==='password'?'text':'password';});});</script>
+</body>
+</html>

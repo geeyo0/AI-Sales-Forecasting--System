@@ -1,0 +1,367 @@
+{% macro home_icon(name, extra_class="") %}
+<svg class="home-ui-icon {{ extra_class }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+    {% if name == "cart" %}
+    <circle cx="9" cy="20" r="1"></circle>
+    <circle cx="18" cy="20" r="1"></circle>
+    <path d="M3 4h2l2.5 11h10.8l2-7H6"></path>
+
+    {% elif name == "chart" %}
+    <path d="M5 20V11M12 20V4M19 20v-6"></path>
+
+    {% elif name == "calendar" %}
+    <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+    <path d="M8 3v4M16 3v4M3 10h18"></path>
+
+    {% elif name == "warning" %}
+    <path d="M10.3 4.1 2.6 18a2 2 0 0 0 1.8 3h15.2a2 2 0 0 0 1.8-3L13.7 4.1a2 2 0 0 0-3.4 0Z"></path>
+    <path d="M12 9v4M12 17h.01"></path>
+
+    {% elif name == "check" %}
+    <circle cx="12" cy="12" r="9"></circle>
+    <path d="m8 12 2.5 2.5L16 9"></path>
+
+    {% elif name == "eye" %}
+    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+    <circle cx="12" cy="12" r="2.5"></circle>
+
+    {% elif name == "arrow-right" %}
+    <path d="M5 12h14M14 7l5 5-5 5"></path>
+    {% endif %}
+</svg>
+{% endmacro %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Home | FoodCast AI</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+
+<body class="foodcast-home">
+    <div class="shell">
+        {% include "business/sidebar.html" %}
+
+        <div class="main">
+            {% include "business/header.html" %}
+
+            <main class="content home-content">
+                <section class="home-hero">
+                    <div class="home-hero-copy">
+                        <p class="home-hero-kicker">Welcome back,</p>
+
+                        <h1>{{ business["business_name"] }}</h1>
+
+                        <p class="home-hero-description">
+                            Here is a quick look at how your business is doing today.
+                        </p>
+                    </div>
+
+                    <div class="home-hero-side">
+                        <div class="home-hero-clock">
+                            <span id="home-date">
+                                {{ today.strftime("%A, %B %d, %Y") }}
+                            </span>
+
+                            <time id="home-time"></time>
+
+                            <small>Philippine time</small>
+                        </div>
+
+                        <div class="home-hero-actions">
+                            <a href="{{ url_for('business_sales') }}" class="home-hero-button home-hero-button-primary">
+                                Record sales
+                            </a>
+
+                            <a href="{{ url_for('business_forecasting') }}" class="home-hero-button">
+                                View forecast →
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="home-summary" aria-label="Sales summary">
+                    <article class="card home-metric-card">
+                        <div>
+                            <h2>Today’s sales</h2>
+
+                            <p class="home-total">
+                                ₱{{ "{:,.2f}".format(totals["today_sales"]) }}
+                            </p>
+
+                            <p class="home-note">
+                                {{ today.strftime("%b %d, %Y") }}
+                            </p>
+                        </div>
+
+                        <span class="home-metric-icon">
+    {{ home_icon("cart") }}
+</span>
+                    </article>
+
+                    <article class="card home-metric-card">
+                        <div>
+                            <h2>This week’s sales</h2>
+
+                            <p class="home-total">
+                                ₱{{ "{:,.2f}".format(totals["week_sales"]) }}
+                            </p>
+
+                            <p class="home-note">
+                                {{ week_start.strftime("%b %d") }}
+                                – {{ today.strftime("%b %d") }}
+                            </p>
+                        </div>
+
+                        <span class="home-metric-icon">
+    {{ home_icon("chart") }}
+</span>
+                    </article>
+
+                    <article class="card home-metric-card">
+                        <div>
+                            <h2>This month’s sales</h2>
+
+                            <p class="home-total">
+                                ₱{{ "{:,.2f}".format(totals["month_sales"]) }}
+                            </p>
+
+                            <p class="home-note">
+                                {{ month_start.strftime("%b %d") }}
+                                – {{ today.strftime("%b %d") }}
+                            </p>
+                        </div>
+
+                        <span class="home-metric-icon">
+    {{ home_icon("calendar") }}
+</span>
+                    </article>
+                </section>
+
+                <section class="card home-stock-card">
+                    {% if stock_alerts %}
+                    <div class="home-stock-alert">
+                        <div class="home-stock-alert-icon">
+    {{ home_icon("warning") }}
+</div>
+
+                        <div class="home-stock-alert-message">
+                            <h2>Low stock alert</h2>
+
+                            <p>
+                                {{ stock_alerts | length }}
+                                product{% if stock_alerts | length != 1 %}s{% endif %}
+                                need a stock check.
+                            </p>
+                        </div>
+
+                        <a class="home-stock-alert-button" href="{{ url_for('business_inventory') }}">
+                            Manage stock →
+                        </a>
+                    </div>
+
+                    <div class="table-scroll">
+                        <table class="home-stock-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Product</th>
+                                    <th scope="col">Available stock</th>
+                                    <th scope="col">Suggested step</th>
+                                    <th scope="col">View</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for product in stock_alerts %}
+                                <tr>
+                                    <td>{{ product["product_name"] }}</td>
+
+                                    <td>
+                                        {{ product["available"] }}
+                                        {{ product["selling_unit"] }}
+                                    </td>
+
+                                    <td>
+                                        {% if product["available"] < 0 %} Review stock entries. {% else %} Add or update
+                                            stock. {% endif %} </td>
+
+                                    <td>
+                                        <a class="home-stock-view-link"
+                                            href="{{ url_for('business_products', search=product['product_name']) }}"
+                                            aria-label="View {{ product['product_name'] }}" title="View product">
+                                            {{ home_icon("eye") }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% else %}
+                    <div class="home-stock-alert home-stock-clear">
+                        <div class="home-stock-alert-icon">
+    {{ home_icon("check") }}
+</div>
+
+                        <div class="home-stock-alert-message">
+                            <h2>Stock looks good</h2>
+                            <p>No products need a stock check right now.</p>
+                        </div>
+
+                        <a class="home-stock-alert-button" href="{{ url_for('business_inventory') }}">
+                            View stock →
+                        </a>
+                    </div>
+                    {% endif %}
+                </section>
+
+                <section class="home-columns">
+                    <article class="card home-data-card">
+                        <div class="home-card-heading">
+                            <div>
+                                <h2>Sales over the last 7 days</h2>
+
+                                <p class="home-note">
+                                    {{ chart_start.strftime("%b %d") }}
+                                    – {{ today.strftime("%b %d, %Y") }}.
+                                </p>
+                            </div>
+
+                            <a href="{{ url_for('business_sales') }}" class="home-view-button">
+                                View all
+                            </a>
+                        </div>
+
+                        <ul class="home-trend">
+                            {% for day in chart_days %}
+                            <li>
+                                <div class="home-trend-label">
+                                    <span>{{ day["date"].strftime("%a, %b %d") }}</span>
+
+                                    <strong>
+                                        {% if day["has_records"] %}
+                                        ₱{{ "{:,.2f}".format(day["amount"]) }}
+                                        {% else %}
+                                        No sales entered
+                                        {% endif %}
+                                    </strong>
+                                </div>
+
+                                <div class="home-trend-track" aria-hidden="true">
+                                    <div class="home-trend-bar" data-percentage="{{ day['percentage'] }}"></div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </article>
+
+                    <article class="card home-data-card">
+                        <div class="home-card-heading">
+                            <div>
+                                <h2>Best sellers this month</h2>
+
+                                <p class="home-note">
+                                    Your top products by total sales amount.
+                                </p>
+                            </div>
+
+                            <a href="{{ url_for('business_products') }}" class="home-view-button">
+                                View all
+                            </a>
+                        </div>
+
+                        {% if top_products %}
+                        <ol class="home-products">
+                            {% for product in top_products %}
+                            <li>
+                                <span class="home-product-rank">{{ loop.index }}</span>
+
+                                <div class="home-product-details">
+                                    <strong>{{ product["product_name"] }}</strong>
+
+                                    <p>
+                                        {{ product["quantity"] }}
+                                        {{ product["selling_unit"] }} sold
+                                    </p>
+                                </div>
+
+                                <strong class="home-product-amount">
+                                    ₱{{ "{:,.2f}".format(product["revenue"]) }}
+                                </strong>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                        {% else %}
+                        <div class="home-empty">
+                            <p>No best sellers to show yet.</p>
+
+                            <p class="home-note">
+                                Products appear here after you save sales.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </article>
+                </section>
+
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const dateLabel = document.getElementById("home-date");
+        const timeLabel = document.getElementById("home-time");
+
+        const dateFormat = new Intl.DateTimeFormat("en-PH", {
+            timeZone: "Asia/Manila",
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric"
+        });
+
+        const timeFormat = new Intl.DateTimeFormat("en-PH", {
+            timeZone: "Asia/Manila",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        });
+
+        function updateClock() {
+            const now = new Date();
+
+            dateLabel.textContent = dateFormat.format(now);
+            timeLabel.textContent = timeFormat.format(now);
+            timeLabel.dateTime = now.toISOString();
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        document.querySelectorAll(".home-trend-bar").forEach(function (bar) {
+            const percentage = Number(bar.dataset.percentage);
+
+            if (Number.isFinite(percentage)) {
+                bar.style.width =
+                    Math.max(0, Math.min(100, percentage)) + "%";
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1013 @@
+{% macro forecast_icon(name, extra_class="") %}
+<svg class="forecast-ui-icon {{ extra_class }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+    {% if name == "location" %}
+    <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+    <circle cx="12" cy="10" r="2.5"></circle>
+
+    {% elif name == "calendar" %}
+    <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+    <path d="M8 3v4M16 3v4M3 10h18"></path>
+
+    {% elif name == "chart" %}
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20V7"></path>
+
+    {% elif name == "trophy" %}
+    <path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"></path>
+    <path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4"></path>
+    <path d="M12 12v5M8 21h8M9 17h6"></path>
+
+    {% elif name == "sun" %}
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+
+    {% elif name == "cloud-sun" %}
+    <path d="M7 7a4 4 0 0 1 7.6-1.7M16 3v2M20 7h-2"></path>
+    <path d="M6.5 18H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 18Z"></path>
+
+    {% elif name == "fog" %}
+    <path d="M6.5 15H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 15Z"></path>
+    <path d="M5 19h14M8 22h8"></path>
+
+    {% elif name == "drizzle" %}
+    <path d="M6.5 15H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 15Z"></path>
+    <path d="M8 18l-1 2M13 18l-1 2M18 18l-1 2"></path>
+
+    {% elif name == "rain" %}
+    <path d="M6.5 14H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 14Z"></path>
+    <path d="M8 17l-2 4M13 17l-2 4M18 17l-2 4"></path>
+
+    {% elif name == "storm" %}
+    <path d="M6.5 14H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 14Z"></path>
+    <path d="M13 15l-3 4h3l-2 3M18 17l-2 4"></path>
+
+    {% else %}
+    <path d="M6.5 18H18a4 4 0 0 0 0-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 6.5 18Z"></path>
+    {% endif %}
+</svg>
+{% endmacro %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sales Forecast | FoodCast AI</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+
+<body class="foodcast-forecast">
+    <div class="shell">
+        {% include "business/sidebar.html" %}
+
+        <div class="main">
+            {% include "business/header.html" %}
+
+<main class="content forecast-page">
+    <section class="forecast-page-heading">
+        <div class="forecast-page-title">
+            <span class="forecast-title-icon" aria-hidden="true">↗</span>
+
+            <div>
+                <h1>Sales Forecast</h1>
+                <p>See how much you may sell and plan what to prepare.</p>
+            </div>
+        </div>
+
+        <form
+    id="forecast-generator-form"
+    method="post"
+    action="{{ url_for('business_forecasting') }}"
+    class="forecast-generator-form"
+>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label class="forecast-period-select">
+                {{ forecast_icon("calendar", "forecast-period-icon") }}
+                <select name="forecast_days" aria-label="Forecast period">
+                    <option value="1">Next day</option>
+                    <option value="7">Next 7 days</option>
+                    <option value="30" selected>Next 30 days</option>
+                </select>
+                <span class="forecast-period-chevron" aria-hidden="true">▾</span>
+            </label>
+
+            <button type="submit" id="forecast-generate-button" class="forecast-generate-btn">
+                {{ forecast_icon("chart", "forecast-button-icon") }}
+                <span>Generate forecast</span>
+            </button>
+        </form>
+    </section>
+
+    {% for message in get_flashed_messages(category_filter=["forecast_success"]) %}
+    <p class="forecast-success" role="status">{{ message }}</p>
+    {% endfor %}
+
+    {% for message in get_flashed_messages(category_filter=["forecast_error"]) %}
+    <p class="business-error" role="alert">{{ message }}</p>
+    {% endfor %}
+
+    <section class="forecast-weather-strip" aria-label="Local weather forecast">
+        <div class="forecast-weather-location">
+            {{ forecast_icon("location", "forecast-location-icon") }}
+
+            <div>
+                <strong>
+                    {% if business["location_name"] %}
+                    {{ business["location_name"] }}
+                    {% else %}
+                    Your business location
+                    {% endif %}
+                </strong>
+
+                <span>Weather forecast</span>
+            </div>
+        </div>
+
+        {% if weather %}
+        <div class="forecast-weather-day">
+            {{ forecast_icon(weather["today"]["icon"], "forecast-weather-icon") }}
+
+            <div>
+                <small>Today</small>
+                <strong>{{ weather["today"]["temperature"] }}°</strong>
+                <span>{{ weather["today"]["condition"] }}</span>
+                <em>
+                    Rain: {{ weather["today"]["rain_chance"] }}%
+                    · Wind: {{ weather["today"]["wind"] }} km/h
+                </em>
+            </div>
+        </div>
+
+        <div class="forecast-weather-day">
+            {{ forecast_icon(weather["tomorrow"]["icon"], "forecast-weather-icon") }}
+            <div>
+                <small>Tomorrow</small>
+                <strong>{{ weather["tomorrow"]["maximum_temperature"] }}°</strong>
+                <span>{{ weather["tomorrow"]["condition"] }}</span>
+                <em>Rain: {{ weather["tomorrow"]["rain_chance"] }}%</em>
+            </div>
+        </div>
+
+        <div class="forecast-weather-advice">
+            <span class="forecast-advice-icon" aria-hidden="true">ⓘ</span>
+            <div>
+                {{ weather["advice"] }}
+
+                <small>
+                    Updated {{ weather["updated_time"] }}
+                    · Weather by Open-Meteo
+                </small>
+            </div>
+        </div>
+        {% else %}
+        <p class="forecast-weather-empty">
+            {% if weather_error %}
+            {{ weather_error }}
+            {% else %}
+            Set your location to see local weather.
+            {% endif %}
+        </p>
+        {% endif %}
+
+        <button type="button" id="save-business-location" class="forecast-location-button">
+            ⊙ Update location
+        </button>
+
+        <span id="location-message" class="forecast-location-message" role="status" aria-live="polite"></span>
+
+        <form id="business-location-form" method="post" action="{{ url_for('save_business_location') }}" hidden>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="forecasting">
+            <input type="hidden" id="location-latitude" name="latitude">
+            <input type="hidden" id="location-longitude" name="longitude">
+            <input type="hidden" id="location-accuracy" name="accuracy">
+        </form>
+    </section>
+
+
+    {% if business_forecast_run %}
+    <section class="forecast-stat-grid">
+        <article class="card forecast-stat-card forecast-stat-card-green">
+            <span class="forecast-stat-icon" aria-hidden="true">◔</span>
+
+            <div>
+                <p>Estimated Demand</p>
+                <strong id="forecast-total">—</strong>
+                <small>total units · Next {{ business_forecast_run["forecast_days"] }} day{% if
+                    business_forecast_run["forecast_days"] != 1 %}s{% endif %}</small>
+            </div>
+        </article>
+
+        <article class="card forecast-stat-card" id="forecast-change-card">
+            <span class="forecast-stat-icon" id="forecast-change-icon" aria-hidden="true">↗</span>
+
+            <div>
+                <p>
+    Compared to Last
+    {{ business_forecast_run["forecast_days"] }} Days
+</p>
+                <strong id="forecast-change">—</strong>
+                <small id="forecast-change-label">
+    vs. previous {{ business_forecast_run["forecast_days"] }}
+    day{% if business_forecast_run["forecast_days"] != 1 %}s{% endif %}
+</small>
+            </div>
+        </article>
+
+        <article class="card forecast-stat-card forecast-stat-card-gold">
+            <span class="forecast-stat-icon">
+    {{ forecast_icon("trophy", "forecast-trophy-icon") }}
+</span>
+
+            <div>
+                <p>Busiest Day</p>
+                <strong id="forecast-highest-day">—</strong>
+                <small id="forecast-highest-amount">No data yet</small>
+            </div>
+        </article>
+    </section>
+
+    <section class="card forecast-chart-card">
+        <div class="forecast-card-heading">
+            <div>
+                <h2>Sales Forecast</h2>
+                <p>
+                    Past sales and estimated demand for the next
+                    {{ business_forecast_run["forecast_days"] }} days
+                </p>
+            </div>
+
+            <div class="forecast-legend">
+                <span><i class="actual-line"></i>Past Sales</span>
+                <span><i class="forecast-line"></i>Estimated Demand</span>
+            </div>
+        </div>
+
+        <div class="forecast-chart-wrap">
+            <svg id="forecast-chart" viewBox="0 0 1000 290" role="img"
+                aria-label="Past sales and estimated demand chart"></svg>
+
+            <div id="forecast-chart-empty" class="forecast-chart-empty" hidden>
+                <span class="forecast-chart-empty-icon">
+    {{ forecast_icon("chart", "forecast-empty-chart-icon") }}
+</span>
+                <p class="forecast-chart-empty-title">No forecast data yet</p>
+                <p class="forecast-chart-empty-text">Click “Generate forecast” to view predictions.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card business-backtest-card">
+        <div class="business-backtest-heading">
+            <h2>Your Forecast Test</h2>
+
+            {% if business_backtest["available"] %}
+            <p>
+                Tested {{ business_backtest["products_tested"] }}
+                product{% if business_backtest["products_tested"] != 1 %}s{% endif %}
+                using {{ business_backtest["predictions_tested"] }}
+                past sales predictions.
+            </p>
+            {% else %}
+            <p>{{ business_backtest["message"] }}</p>
+            {% endif %}
+        </div>
+
+        {% if business_backtest["available"] %}
+        <div class="business-backtest-results">
+            <div>
+                <span>Average error</span>
+                <strong>{{ business_backtest["mae"] }} items</strong>
+                <small>MAE</small>
+            </div>
+
+            <div>
+                <span>Large-error measure</span>
+                <strong>{{ business_backtest["rmse"] }} items</strong>
+                <small>RMSE</small>
+            </div>
+
+            <div>
+                <span>Percentage error</span>
+                <strong>
+                    {% if business_backtest["relative_mae"] is not none %}
+                    {{ business_backtest["relative_mae"] }}%
+                    {% else %}
+                    Not available
+                    {% endif %}
+                </strong>
+                <small>Compared with average sales</small>
+            </div>
+
+            <div class="forecast-reliability-box">
+    <span>Forecast reliability</span>
+
+    <strong class="forecast-reliability-{{ business_backtest['reliability_class'] }}">
+        {{ business_backtest["reliability"] }}
+    </strong>
+
+    <small>
+        {{ business_backtest["reliability_message"] }}
+    </small>
+</div>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="forecast-bottom-grid">
+        <article class="card forecast-products-card">
+            <div class="forecast-card-heading">
+                <div>
+                    <h2>What to Prepare</h2>
+                    <p>See the estimated demand and stock needs for each product.</p>
+                </div>
+
+                <a href="{{ url_for('business_products') }}" class="forecast-view-products">
+                    View products →
+                </a>
+            </div>
+
+            <div class="table-scroll">
+                <table class="forecast-products-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>In Stock</th>
+                            <th>
+                                Estimated Demand
+                                <small>
+                                    (Next {{ business_forecast_run["forecast_days"] }} days)
+                                </small>
+                            </th>
+                            <th>What to Do</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for product in business_forecast_products %}
+                        <tr>
+                            <td>
+                                {{ product["product_name"] }}
+                            </td>
+
+                            <td>
+                                {{ product["available_stock"] }}
+                                {{ product["selling_unit"] }}
+                            </td>
+
+                            {% if product["method_used"] == "Not enough history" %}
+                            <td colspan="2" class="forecast-history-message">
+                                Not enough sales history yet — keep recording daily sales.
+                            </td>
+                            {% else %}
+                            <td>
+                                {{ "{:,.0f}".format(product["predicted_demand"]) }}
+                                {{ product["selling_unit"] }}
+                            </td>
+
+                            <td>
+                                {% if product["recommended_to_prepare"] > 0 %}
+                                <span class="forecast-prepare-more">
+                                    Prepare {{ "{:,.0f}".format(product["recommended_to_prepare"]) }} more
+                                </span>
+                                {% else %}
+                                <span class="forecast-stock-enough">
+                                    Stock is enough
+                                </span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <aside class="card forecast-summary-card">
+            <div class="forecast-summary-heading">
+                <span aria-hidden="true">◔</span>
+                <h2>Forecast Overview</h2>
+            </div>
+
+            <dl>
+                <div>
+                    <dt>Forecast period</dt>
+                    <dd id="forecast-period-label">—</dd>
+                </div>
+
+                <div>
+                    <dt>Total estimated demand</dt>
+                    <dd id="forecast-summary-total">—</dd>
+                </div>
+
+                <div>
+                    <dt>Average estimated demand per day</dt>
+                    <dd id="forecast-average">—</dd>
+                </div>
+
+                <div>
+                    <dt>Products to prepare</dt>
+                    <dd id="forecast-prepare-count">—</dd>
+                </div>
+            </dl>
+
+            <p class="forecast-summary-note">
+    These are estimates based on past sales and may differ from actual customer demand.
+</p>
+        </aside>
+    </section>
+    {% else %}
+    <section class="card forecast-empty-card">
+        <h2>Generate your first forecast</h2>
+
+        <p>
+            Choose the next day, 7 days, or 30 days. FoodCast will use your saved sales and stock records.
+        </p>
+    </section>
+    {% endif %}
+</main>
+        </div>
+    </div>
+
+{% if business_forecast_run %}
+<script id="business-forecast-chart-data" type="application/json">
+    {{ business_forecast_chart | tojson }}
+</script>
+
+<script>
+    const forecastChartData = JSON.parse(
+        document.getElementById("business-forecast-chart-data").textContent
+    );
+
+    const allForecastValues = forecastChartData.forecasted_sales.map(
+        function (day) {
+            return Number(day.quantity);
+        }
+    );
+
+    const comparisonDayCount = Math.max(
+            1,
+            forecastChartData.forecasted_sales.length
+        );
+
+        const comparisonActualSales =
+            forecastChartData.actual_sales.slice(-comparisonDayCount);
+
+        const actualTotal = comparisonActualSales.reduce(
+            function (total, day) {
+                return total + Number(day.quantity);
+            },
+            0
+        );
+
+    const forecastTotal = allForecastValues.reduce(
+        function (total, quantity) {
+            return total + quantity;
+        },
+        0
+    );
+
+    document.getElementById("forecast-total").textContent =
+        Math.round(forecastTotal).toLocaleString() + " units";
+
+    document.getElementById("forecast-summary-total").textContent =
+        Math.round(forecastTotal).toLocaleString() + " pieces";
+
+    document.getElementById("forecast-average").textContent =
+        allForecastValues.length
+            ? Math.round(
+                forecastTotal / allForecastValues.length
+            ).toLocaleString() + " pieces"
+            : "—";
+
+    const productsToPrepare =
+        document.querySelectorAll(".forecast-prepare-more").length;
+
+    document.getElementById("forecast-prepare-count").textContent =
+        productsToPrepare + " product"
+        + (productsToPrepare === 1 ? "" : "s");
+
+    const percentageChange = actualTotal > 0
+            ? ((forecastTotal - actualTotal) / actualTotal) * 100
+            : null;
+
+    const changeElement = document.getElementById("forecast-change");
+    const changeCard = document.getElementById("forecast-change-card");
+    const changeIcon = document.getElementById("forecast-change-icon");
+    const changeIsPositive =
+            percentageChange === null || percentageChange >= 0;
+
+        changeElement.textContent =
+            percentageChange === null
+                ? "No comparison"
+                : (changeIsPositive ? "+" : "")
+                + percentageChange.toFixed(1)
+                + "%";
+
+    changeElement.classList.toggle("forecast-positive", changeIsPositive);
+    changeElement.classList.toggle("forecast-negative", !changeIsPositive);
+
+    changeCard.classList.toggle("forecast-stat-card-green", changeIsPositive);
+    changeCard.classList.toggle("forecast-stat-card-red", !changeIsPositive);
+
+    changeIcon.textContent = changeIsPositive ? "↗" : "↘";
+
+    const formatDate = new Intl.DateTimeFormat("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "Asia/Manila"
+    });
+
+    const formatShortDate = new Intl.DateTimeFormat("en-PH", {
+        month: "short",
+        day: "numeric",
+        timeZone: "Asia/Manila"
+    });
+
+    function parseForecastDate(value) {
+        return new Date(value + "T12:00:00+08:00");
+    }
+
+    const firstForecastDay = forecastChartData.forecasted_sales[0];
+    const lastForecastDay =
+        forecastChartData.forecasted_sales[
+        forecastChartData.forecasted_sales.length - 1
+        ];
+
+    if (firstForecastDay && lastForecastDay) {
+        document.getElementById("forecast-period-label").textContent =
+            formatShortDate.format(parseForecastDate(firstForecastDay.date))
+            + " – "
+            + formatDate.format(parseForecastDate(lastForecastDay.date));
+    }
+
+    if (allForecastValues.length) {
+        const highestValue = Math.max.apply(null, allForecastValues);
+
+        const highestDay = forecastChartData.forecasted_sales.find(
+            function (day) {
+                return Number(day.quantity) === highestValue;
+            }
+        );
+
+        document.getElementById("forecast-highest-day").textContent =
+            new Intl.DateTimeFormat("en-PH", {
+                weekday: "long",
+                timeZone: "Asia/Manila"
+            }).format(parseForecastDate(highestDay.date));
+
+        document.getElementById("forecast-highest-amount").textContent =
+        Math.round(highestValue).toLocaleString()
+            + " units";
+    }
+
+    const svg = document.getElementById("forecast-chart");
+    const emptyOverlay = document.getElementById("forecast-chart-empty");
+    const actual = forecastChartData.actual_sales;
+    const future = forecastChartData.forecasted_sales;
+    const hasForecast = future.length > 0;
+
+    emptyOverlay.hidden = hasForecast;
+
+    if (!actual.length) {
+        svg.hidden = true;
+    } else {
+        svg.hidden = false;
+
+        const namespace = "http://www.w3.org/2000/svg";
+        const height = 290;
+
+        const allPoints = hasForecast
+            ? actual.concat(future)
+            : actual.slice();
+
+        /*
+         * Give each date enough horizontal space. Short forecasts
+         * still fill the card, while 30-day forecasts can scroll.
+         */
+        const spacePerPoint = 58;
+        const width = Math.max(
+            1000,
+            allPoints.length * spacePerPoint
+        );
+
+        const padding = {
+            top: 18,
+            right: 35,
+            bottom: 45,
+            left: 58
+        };
+
+        svg.setAttribute(
+            "viewBox",
+            `0 0 ${width} ${height}`
+        );
+
+        svg.style.width = `${width}px`;
+        svg.style.minWidth = `${width}px`;
+        svg.style.height = "auto";
+
+        const values = allPoints.map(function (point) {
+            return Number(point.quantity);
+        });
+
+        const maximum = Math.max.apply(null, values);
+        const chartMaximum = Math.ceil(maximum / 100) * 100 || 100;
+
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+
+        function createSvg(name, attributes) {
+            const element = document.createElementNS(namespace, name);
+
+            Object.keys(attributes).forEach(function (key) {
+                element.setAttribute(key, attributes[key]);
+            });
+
+            return element;
+        }
+
+        function xPosition(index) {
+            return padding.left
+                + (chartWidth / (allPoints.length - 1 || 1)) * index;
+        }
+
+        function yPosition(value) {
+            return padding.top
+                + chartHeight
+                - (Number(value) / chartMaximum) * chartHeight;
+        }
+
+        svg.textContent = "";
+
+        for (let grid = 0; grid <= 4; grid += 1) {
+            const value = (chartMaximum / 4) * grid;
+            const y = yPosition(value);
+
+            svg.appendChild(createSvg("line", {
+                x1: padding.left,
+                y1: y,
+                x2: width - padding.right,
+                y2: y,
+                class: "forecast-grid-line"
+            }));
+
+            const label = createSvg("text", {
+                x: padding.left - 10,
+                y: y + 4,
+                "text-anchor": "end",
+                class: "forecast-axis-label"
+            });
+
+            label.textContent = Math.round(value).toLocaleString();
+            svg.appendChild(label);
+        }
+
+        allPoints.forEach(function (point, index) {
+            const x = xPosition(index);
+
+            const label = createSvg("text", {
+                x: x,
+                y: height - 16,
+                "text-anchor": "middle",
+                class: "forecast-axis-label"
+            });
+
+            label.textContent = formatShortDate.format(
+                parseForecastDate(point.date)
+            );
+
+            svg.appendChild(label);
+        });
+
+        function createPath(points, offset) {
+            return points.map(function (point, index) {
+                return (index === 0 ? "M" : "L")
+                    + xPosition(index + offset)
+                    + " "
+                    + yPosition(point.quantity);
+            }).join(" ");
+        }
+
+        const actualPath = createPath(actual, 0);
+
+        svg.appendChild(createSvg("path", {
+            d: actualPath,
+            class: "forecast-actual-path"
+        }));
+
+        actual.forEach(function (point, index) {
+            svg.appendChild(createSvg("circle", {
+                cx: xPosition(index),
+                cy: yPosition(point.quantity),
+                r: 4.5,
+                class: "forecast-actual-point"
+            }));
+        });
+
+        if (hasForecast) {
+            const forecastPath = createPath(
+                [actual[actual.length - 1]].concat(future),
+                actual.length - 1
+            );
+
+            svg.appendChild(createSvg("path", {
+                d: forecastPath,
+                class: "forecast-future-path"
+            }));
+
+            future.forEach(function (point, index) {
+                svg.appendChild(createSvg("circle", {
+                    cx: xPosition(index + actual.length),
+                    cy: yPosition(point.quantity),
+                    r: 4.5,
+                    class: "forecast-future-point"
+                }));
+            });
+
+            future.forEach(function (point, index) {
+                svg.appendChild(createSvg("circle", {
+                    cx: xPosition(index + actual.length),
+                    cy: yPosition(point.quantity),
+                    r: 4.5,
+                    class: "forecast-predicted-point"
+                }));
+            });
+
+            /* Automatically show the beginning of the forecast. */
+            const chartWrapper = svg.closest(".forecast-chart-wrap");
+
+            if (chartWrapper && future.length > 7) {
+                requestAnimationFrame(function () {
+                    const forecastStartRatio =
+                        Math.max(0, actual.length - 2)
+                        / Math.max(1, allPoints.length - 1);
+
+                    chartWrapper.scrollLeft =
+                        forecastStartRatio
+                        * (
+                            chartWrapper.scrollWidth
+                            - chartWrapper.clientWidth
+                        );
+                });
+            }
+
+            const dividerX = xPosition(actual.length - 1);
+
+            svg.appendChild(createSvg("line", {
+                x1: dividerX,
+                y1: padding.top,
+                x2: dividerX,
+                y2: height - padding.bottom,
+                class: "forecast-divider"
+            }));
+        }
+    }
+</script>
+{% endif %}
+
+    <script>
+        const locationButton = document.getElementById("save-business-location");
+        const locationForm = document.getElementById("business-location-form");
+        const locationMessage = document.getElementById("location-message");
+
+        if (locationButton && locationForm) {
+            locationButton.addEventListener("click", function () {
+                if (!navigator.geolocation) {
+                    locationMessage.textContent =
+                        "This device cannot provide its location.";
+                    return;
+                }
+
+                locationButton.disabled = true;
+                locationMessage.textContent =
+                    "Finding your business location…";
+
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        document.getElementById("location-latitude").value =
+                            position.coords.latitude.toFixed(6);
+
+                        document.getElementById("location-longitude").value =
+                            position.coords.longitude.toFixed(6);
+
+                        document.getElementById("location-accuracy").value =
+                            Math.round(position.coords.accuracy);
+
+                        locationMessage.textContent =
+                            "Saving your business location…";
+
+                        locationForm.submit();
+                    },
+
+                    function (error) {
+                        locationButton.disabled = false;
+
+                        if (error.code === error.PERMISSION_DENIED) {
+                            locationMessage.textContent =
+                                "Allow location access and try again.";
+                        } else if (error.code === error.TIMEOUT) {
+                            locationMessage.textContent =
+                                "Location took too long. Try again.";
+                        } else {
+                            locationMessage.textContent =
+                                "Your location could not be found.";
+                        }
+                    },
+
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 15000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+    </script>
+
+    <div id="forecast-loading-overlay" class="forecast-loading-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="forecast-loading-title" aria-describedby="forecast-loading-description" aria-hidden="true" hidden>
+        <div class="forecast-loading-card">
+            <div class="forecast-loading-spinner" aria-hidden="true"></div>
+    
+            <h2 id="forecast-loading-title">
+                Generating your forecast
+            </h2>
+    
+            <p id="forecast-loading-description">
+                Please wait while FoodCast analyzes your sales history.
+            </p>
+    
+            <div class="forecast-loading-progress" aria-hidden="true">
+    <span></span>
+</div>
+
+<button
+    type="button"
+    id="forecast-cancel-button"
+    class="forecast-cancel-button"
+>
+    Cancel
+</button>
+        </div>
+    </div>
+    
+    <script>
+    (function () {
+        const form = document.getElementById(
+            "forecast-generator-form"
+        );
+
+        const button = document.getElementById(
+            "forecast-generate-button"
+        );
+
+        const overlay = document.getElementById(
+            "forecast-loading-overlay"
+        );
+
+        const cancelButton = document.getElementById(
+            "forecast-cancel-button"
+        );
+
+        if (!form || !button || !overlay || !cancelButton) {
+            return;
+        }
+
+        const buttonText = button.querySelector("span");
+        let forecastController = null;
+
+        function showLoadingScreen() {
+            button.disabled = true;
+            button.setAttribute("aria-busy", "true");
+
+            if (buttonText) {
+                buttonText.textContent = "Generating...";
+            }
+
+            overlay.hidden = false;
+            overlay.setAttribute("aria-hidden", "false");
+
+            document.body.classList.add(
+                "forecast-is-generating"
+            );
+
+            cancelButton.focus();
+        }
+
+        function hideLoadingScreen() {
+            overlay.hidden = true;
+            overlay.setAttribute("aria-hidden", "true");
+
+            button.disabled = false;
+            button.removeAttribute("aria-busy");
+
+            if (buttonText) {
+                buttonText.textContent = "Generate forecast";
+            }
+
+            document.body.classList.remove(
+                "forecast-is-generating"
+            );
+        }
+
+        form.addEventListener(
+            "submit",
+            async function (event) {
+                event.preventDefault();
+
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                forecastController = new AbortController();
+                showLoadingScreen();
+
+                try {
+                    const response = await fetch(
+                        form.action,
+                        {
+                            method: "POST",
+                            body: new FormData(form),
+                            signal: forecastController.signal,
+                            credentials: "same-origin",
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "The forecast request failed."
+                        );
+                    }
+
+                    window.location.assign(response.url);
+                }
+
+                catch (error) {
+                    hideLoadingScreen();
+
+                    if (error.name !== "AbortError") {
+                        window.alert(
+                            "The forecast could not be generated. "
+                            + "Please try again."
+                        );
+                    }
+                }
+
+                finally {
+                    forecastController = null;
+                }
+            }
+        );
+
+        cancelButton.addEventListener(
+            "click",
+            function () {
+                if (forecastController) {
+                    forecastController.abort();
+                }
+
+                hideLoadingScreen();
+                button.focus();
+            }
+        );
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+                if (
+                    event.key === "Escape"
+                    && !overlay.hidden
+                ) {
+                    cancelButton.click();
+                }
+            }
+        );
+
+        window.addEventListener(
+            "pageshow",
+            function () {
+                hideLoadingScreen();
+                forecastController = null;
+            }
+        );
+    })();
+</script>
+</body>
+
+</html>

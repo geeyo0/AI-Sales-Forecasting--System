@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Edit Selected Sales | FoodCast</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='product_tools.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sales.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+</head>
+
+<body>
+    <main class="sales-edit-page">
+        <a class="btn btn-outline" href="{{ url_for('business_sales') }}">
+            Back to sales
+        </a>
+
+        <section class="card sales-edit-card">
+            <h1 class="business-page-title">
+                Edit Selected Sales
+            </h1>
+
+            <p class="sales-description">
+                Update the {{ sales|length }} selected sales records.
+            </p>
+
+            {% if error %}
+            <p class="business-error" role="alert">
+                {{ error }}
+            </p>
+            {% endif %}
+
+            <form method="post" class="product-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                {% for sale in sales %}
+                <input type="hidden" name="sale_id" value="{{ sale['sale_id'] }}">
+
+                <section class="card bulk-sale-edit-row">
+                    <div class="tools-heading">
+                        <div>
+                            <h2 class="section-title">
+                                {{ sale["product_name"] }}
+                            </h2>
+
+                            <p class="sales-description">
+                                {{ sale["selling_unit"] }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bulk-sale-edit-fields">
+                        <div class="field">
+                            <label for="sale_date_{{ sale['sale_id'] }}">
+                                Sales Date
+                            </label>
+
+                            <input type="date" id="sale_date_{{ sale['sale_id'] }}"
+                                name="sale_date_{{ sale['sale_id'] }}"
+                                value="{{ values[sale['sale_id']]['sale_date'] }}" max="{{ today }}" required>
+                        </div>
+
+                        <div class="field">
+                            <label for="quantity_sold_{{ sale['sale_id'] }}">
+                                Quantity Sold
+                            </label>
+
+                            <input type="number" id="quantity_sold_{{ sale['sale_id'] }}"
+                                name="quantity_sold_{{ sale['sale_id'] }}"
+                                value="{{ values[sale['sale_id']]['quantity_sold'] }}" min="0" max="2147483647" step="1"
+                                required>
+                        </div>
+
+                        <div class="field">
+                            <label for="sales_amount_{{ sale['sale_id'] }}">
+                                Sales Amount (₱)
+                            </label>
+
+                            <input type="number" id="sales_amount_{{ sale['sale_id'] }}"
+                                name="sales_amount_{{ sale['sale_id'] }}"
+                                value="{{ values[sale['sale_id']]['sales_amount'] }}" min="0" max="9999999999.99"
+                                step="0.01" required>
+                        </div>
+                    </div>
+                </section>
+                {% endfor %}
+
+                <div class="tools-buttons">
+                    <a class="btn btn-outline" href="{{ url_for('business_sales') }}">
+                        Cancel
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        Save All Changes
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <style>
+        .sales-edit-card {
+            width: min(1100px, 100%);
+        }
+
+        .bulk-sale-edit-row {
+            margin-top: 16px;
+            padding: 20px;
+        }
+
+        .bulk-sale-edit-fields {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        @media (max-width: 760px) {
+            .bulk-sale-edit-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+
+</html>

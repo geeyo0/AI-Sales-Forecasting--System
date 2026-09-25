@@ -1,0 +1,787 @@
+/* A simple two-section sales page */
+.sales-page {
+    display: grid;
+    gap: 22px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.sales-page>.card {
+    min-width: 0;
+    padding: 24px;
+}
+
+.sales-page .section-title {
+    margin-bottom: 8px;
+    font-size: 18px;
+}
+
+.sales-help {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Product sales entry */
+.sales-entry {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.sales-entry>input[type="hidden"] {
+    display: none;
+}
+
+.sales-field {
+    min-width: 0;
+}
+
+.sales-field label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sales-field input,
+.sales-field select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font-size: 14px;
+}
+
+.sales-field input:focus-visible,
+.sales-field select:focus-visible,
+.sales-page summary:focus-visible,
+.sales-page a:focus-visible,
+.sales-page button:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 3px;
+}
+
+.sales-entry-footer {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.sales-entry-footer .sales-help {
+    max-width: 580px;
+}
+
+.sales-entry-footer .btn {
+    flex-shrink: 0;
+}
+
+/* Keep extra explanations out of the main form */
+.sales-guidance {
+    margin-top: 16px;
+}
+
+.sales-page summary {
+    width: fit-content;
+    padding: 6px 0;
+    color: var(--green-dark);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sales-guidance p {
+    max-width: 720px;
+    margin: 10px 0 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Saved sales and date controls */
+.sales-list-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.sales-list-heading .section-title {
+    margin: 0;
+}
+
+.sales-page a.btn {
+    display: inline-block;
+    text-decoration: none;
+    text-align: center;
+}
+
+.sales-date-options {
+    margin-bottom: 16px;
+}
+
+.sales-date-form {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.sales-date-form .sales-field {
+    flex: 1 1 170px;
+    max-width: 240px;
+}
+
+.sales-text-link {
+    color: var(--green-dark);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sales-date-form .sales-text-link {
+    padding: 12px 0;
+}
+
+/* One quiet summary instead of nested cards */
+.sales-total-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.sales-total-strip strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 24px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.sales-table {
+    margin-top: 8px;
+}
+
+.sales-table th {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 13px;
+}
+
+.sales-table th,
+.sales-table td {
+    padding: 14px 10px;
+}
+
+.sales-money {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.sales-list-note {
+    margin-top: 14px;
+}
+
+.sales-empty {
+    display: grid;
+    justify-items: start;
+    gap: 12px;
+    padding: 20px 0 8px;
+    font-size: 14px;
+}
+
+.sales-page .business-error {
+    margin-top: 14px;
+}
+
+/* Responsive layout */
+@media (max-width: 1100px) {
+    .sales-entry {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .sales-page>.card {
+        padding: 18px;
+    }
+
+    .sales-entry {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sales-entry-footer {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .sales-date-form .sales-field {
+        max-width: none;
+    }
+}
+/* Keep the sales section visible below the fixed header */
+#your-sales {
+    scroll-margin-top: 110px;
+}
+/* Product search in saved sales */
+.sales-search-form {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 14px;
+}
+
+.sales-search-form label {
+    width: 100%;
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sales-search-form input[type="search"] {
+    width: min(320px, 100%);
+    min-height: 42px;
+    padding: 10px 12px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.sales-search-form input:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+
+    .sales-search-form input[type="search"],
+    .sales-search-form .btn {
+        width: 100%;
+    }
+}
+/* Filter card: search on the left, date filter beside it on the right */
+.sales-filter-card {
+    padding: 14px 18px;
+}
+
+.sales-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+}
+
+.sales-filter-search {
+    flex: 1 1 260px;
+    max-width: 360px;
+    box-shadow: var(--shadow);
+}
+
+.sales-date-filter {
+    display: grid;
+    gap: 8px;
+}
+
+.sales-filter-label {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.sales-date-filter .sales-date-form {
+    margin-top: 0;
+}
+
+.sales-date-form .sales-field {
+    flex: 0 0 auto;
+    width: 140px;
+    max-width: 140px;
+}
+
+.date-input-wrap {
+    position: relative;
+}
+
+.date-input-wrap input[type="date"] {
+    width: 100%;
+}
+
+.date-input-wrap input[type="date"].date-empty {
+    color: transparent;
+}
+
+.date-placeholder {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    color: var(--ink-soft);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+@media (max-width: 900px) {
+    .sales-filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sales-filter-search {
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .sales-date-form .sales-field {
+        width: 100%;
+        max-width: none;
+    }
+}
+/* Sales page: percentage badges, filter row, sortable headers */
+.stat-change {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.stat-change-up {
+    color: var(--green-dark);
+}
+
+.stat-change-down {
+    color: var(--red);
+}
+
+.products-filter-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 240px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+}
+
+.sales-date-separator {
+    color: var(--ink-soft);
+}
+
+.btn-text {
+    padding: 0 4px;
+    color: var(--ink-soft);
+    background: transparent;
+    border: 0;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.btn-text:hover {
+    color: var(--ink);
+}
+
+.sort-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-weight: inherit;
+    cursor: pointer;
+}
+
+.sort-header:hover {
+    color: var(--green-dark);
+}
+
+.table-card-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.table-card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.table-card-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    color: var(--green-dark);
+    background: var(--green-light);
+    border-radius: 10px;
+}
+
+.table-card-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.table-card-title h2 {
+    margin: 0;
+}
+
+.table-card-title p {
+    margin: 2px 0 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .sales-date-range-form {
+        flex-wrap: wrap;
+    }
+}
+/* =========================================
+   SALES FILTER
+   ========================================= */
+
+.sales-filter-card {
+    display: grid;
+    gap: 24px;
+    padding: 28px 32px;
+    overflow: visible;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e3e9e4);
+    border-radius: 28px;
+    box-shadow: var(--shadow);
+}
+
+.sales-search-box {
+    position: relative;
+    width: min(100%, 760px);
+    height: 58px;
+}
+
+.sales-search-box>svg {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    z-index: 2;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    transform: translateY(-50%);
+    fill: none;
+    stroke: var(--green-dark, #075d38);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sales-search-box input {
+    width: 100%;
+    height: 100%;
+    padding: 0 20px 0 58px;
+    color: var(--ink, #10241b);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #dce4de);
+    border-radius: 18px;
+    outline: none;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.sales-search-box input:focus {
+    border-color: var(--green, #23834f);
+    box-shadow: 0 0 0 4px rgba(35, 131, 79, 0.12);
+}
+
+.sales-filter-form {
+    display: grid;
+    grid-template-columns:
+        minmax(390px, 1fr) auto auto 1px auto;
+    align-items: end;
+    gap: 18px;
+    width: 100%;
+    margin: 0;
+}
+
+.sales-date-group {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sales-filter-label {
+    color: var(--ink-soft, #65716b);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.sales-date-row {
+    display: grid;
+    grid-template-columns: minmax(175px, 1fr) auto minmax(175px, 1fr);
+    align-items: center;
+    gap: 12px;
+}
+
+.sales-date-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+    height: 64px;
+    padding: 0 16px;
+    cursor: pointer;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #dce4de);
+    border-radius: 17px;
+    box-sizing: border-box;
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.sales-date-box:hover,
+.sales-date-box:focus-within {
+    border-color: var(--green, #23834f);
+    box-shadow: 0 0 0 4px rgba(35, 131, 79, 0.1);
+}
+
+.sales-date-icon {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    color: var(--green-dark, #075d38);
+    background: var(--green-soft, #e5f3e9);
+    border-radius: 12px;
+}
+
+.sales-date-icon svg {
+    width: 23px;
+    height: 23px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sales-date-copy {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.sales-date-name {
+    color: var(--ink-soft, #65716b);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.sales-date-value {
+    overflow: hidden;
+    color: var(--ink, #10241b);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+.sales-range-divider {
+    color: var(--ink-soft, #65716b);
+    font-size: 23px;
+}
+
+.sales-filter-button,
+.sales-show-all-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 64px;
+    padding: 0 22px;
+    border-radius: 17px;
+    white-space: nowrap;
+}
+
+.sales-filter-button svg,
+.sales-show-all-button svg,
+.sales-clear-button svg {
+    flex: 0 0 auto;
+    width: 23px;
+    height: 23px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sales-filter-button {
+    color: #ffffff;
+    background: var(--green, #23834f);
+}
+
+.sales-show-all-button {
+    color: var(--green-dark, #075d38);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #dce4de);
+}
+
+.sales-action-divider {
+    align-self: stretch;
+    width: 1px;
+    min-height: 54px;
+    background: var(--line, #dce4de);
+}
+
+.sales-clear-button {
+    display: inline-flex;
+    align-items: center;
+    align-self: stretch;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 8px;
+    color: var(--ink-soft, #65716b);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Medium screens */
+@media (max-width: 1250px) {
+    .sales-filter-form {
+        grid-template-columns: minmax(380px, 1fr) auto auto;
+    }
+
+    .sales-action-divider {
+        display: none;
+    }
+
+    .sales-clear-button {
+        grid-column: 3;
+    }
+}
+
+/* Tablet */
+@media (max-width: 950px) {
+    .sales-filter-form {
+        grid-template-columns: 1fr 1fr;
+        align-items: stretch;
+    }
+
+    .sales-date-group {
+        grid-column: 1 / -1;
+    }
+
+    .sales-filter-button,
+    .sales-show-all-button {
+        width: 100%;
+    }
+
+    .sales-clear-button {
+        grid-column: 1 / -1;
+        min-height: 46px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .sales-filter-card {
+        gap: 20px;
+        padding: 20px;
+        border-radius: 22px;
+    }
+
+    .sales-date-row,
+    .sales-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-range-divider,
+    .sales-action-divider {
+        display: none;
+    }
+
+    .sales-date-group,
+    .sales-filter-button,
+    .sales-show-all-button,
+    .sales-clear-button {
+        grid-column: 1;
+    }
+}
+.sales-hidden-date {
+    position: absolute !important;
+    left: 50% !important;
+    bottom: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.sales-date-box:focus-visible {
+    outline: 2px solid var(--green, #23834f);
+    outline-offset: 3px;
+}
+/* Center the Show all dates content */
+.sales-page a.sales-show-all-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 64px;
+    padding: 0 22px;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+.sales-page a.sales-show-all-button svg,
+.sales-page a.sales-show-all-button span {
+    flex: 0 0 auto;
+}

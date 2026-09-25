@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Help Center | FoodCast</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='help.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+
+<body class="foodcast-help">
+    <div class="shell">
+        {% include "business/sidebar.html" %}
+
+        <div class="main">
+            {% include "business/header.html" %}
+
+            <main class="content help-page">
+                <section class="help-heading">
+                    <div class="help-title-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H12v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z"></path>
+                            <path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H12v17h4.5A3.5 3.5 0 0 1 20 22V5.5Z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h1>FoodCast Help Center</h1>
+                        <p>
+                            Find simple instructions and answers
+                            about using FoodCast.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="help-search-card">
+                    <label for="help-search">
+                        What do you need help with?
+                    </label>
+
+                    <div class="help-search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="m20 20-4-4"></path>
+                        </svg>
+
+                        <input type="search" id="help-search" placeholder="Search products, sales, stock, forecast..."
+                            autocomplete="off">
+
+                        <button type="button" id="help-search-button">
+                            Search
+                        </button>
+
+                        <button type="button" id="help-clear-button" hidden>
+                            Clear
+                        </button>
+                    </div>
+
+                    <div class="help-quick-links">
+                        <button type="button" data-help-search="products">
+                            Products
+                        </button>
+
+                        <button type="button" data-help-search="sales">
+                            Sales
+                        </button>
+
+                        <button type="button" data-help-search="stock">
+                            Stock
+                        </button>
+
+                        <button type="button" data-help-search="forecast">
+                            Forecast
+                        </button>
+
+                        <button type="button" data-help-search="account">
+                            My account
+                        </button>
+                    </div>
+                </section>
+
+                <p id="help-results-count" class="help-results-count">
+                    Showing all help topics
+                </p>
+
+                <section id="help-topics" class="help-topic-grid">
+
+                    <article class="card help-topic"
+                        data-search="start getting started open foodcast sign in login home">
+                        <span class="help-topic-number">1</span>
+
+                        <div>
+                            <h2>Getting started</h2>
+
+                            <ol>
+                                <li>Open FoodCast.</li>
+                                <li>Enter your username and password.</li>
+                                <li>Enter the code sent to your email.</li>
+                                <li>Select Sign in.</li>
+                            </ol>
+
+                            <p>
+                                After signing in, the Home page shows
+                                a quick look at your business.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="home dashboard today week month best sellers low stock overview">
+                        <span class="help-topic-number">2</span>
+
+                        <div>
+                            <h2>Using the Home page</h2>
+
+                            <p>The Home page shows:</p>
+
+                            <ul>
+                                <li>Sales for today</li>
+                                <li>Sales for this week</li>
+                                <li>Sales for this month</li>
+                                <li>Your best-selling products</li>
+                                <li>Products that need more stock</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="products add product price category unit edit delete excel import export">
+                        <span class="help-topic-number">3</span>
+
+                        <div>
+                            <h2>Adding products</h2>
+
+                            <ol>
+                                <li>Select Products from the side menu.</li>
+                                <li>Select Add product.</li>
+                                <li>Enter the product name.</li>
+                                <li>Choose its category and selling unit.</li>
+                                <li>Enter its price.</li>
+                                <li>Select Save product.</li>
+                            </ol>
+
+                            <p>
+                                Use the edit button to change a product.
+                                Select several products to edit or delete
+                                them together.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="stock inventory add stock remove waste count available update">
+                        <span class="help-topic-number">4</span>
+
+                        <div>
+                            <h2>Updating stock</h2>
+
+                            <ol>
+                                <li>Select Stock from the side menu.</li>
+                                <li>Select Update stock.</li>
+                                <li>Choose a product.</li>
+                                <li>Choose whether stock was added or removed.</li>
+                                <li>Enter the amount.</li>
+                                <li>Select Save.</li>
+                            </ol>
+
+                            <p>
+                                Check the amount carefully before saving.
+                                This helps FoodCast show the correct stock.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="sales record sale date quantity amount edit delete download filter">
+                        <span class="help-topic-number">5</span>
+
+                        <div>
+                            <h2>Recording sales</h2>
+
+                            <ol>
+                                <li>Select Sales from the side menu.</li>
+                                <li>Select Record sales.</li>
+                                <li>Choose the product and date.</li>
+                                <li>Enter how many were sold.</li>
+                                <li>Check the total amount.</li>
+                                <li>Select Save sales.</li>
+                            </ol>
+
+                            <p>
+                                Record sales regularly so your forecast
+                                has enough information to use.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="forecast prediction next day 7 days 30 days generate update weather prepare">
+                        <span class="help-topic-number">6</span>
+
+                        <div>
+                            <h2>Creating a sales forecast</h2>
+
+                            <ol>
+                                <li>Select Sales forecast.</li>
+                                <li>Choose 1, 7, or 30 days.</li>
+                                <li>Select Generate forecast.</li>
+                                <li>Wait for the forecast to finish.</li>
+                                <li>Review the expected sales and stock needs.</li>
+                            </ol>
+
+                            <p>
+                                A forecast is an estimate. Continue recording
+                                daily sales to help improve future results.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="weather location update location rain forecast permission">
+                        <span class="help-topic-number">7</span>
+
+                        <div>
+                            <h2>Updating your location</h2>
+
+                            <ol>
+                                <li>Open Sales forecast.</li>
+                                <li>Select Update location.</li>
+                                <li>Allow location access when asked.</li>
+                                <li>Wait for the weather information to update.</li>
+                            </ol>
+
+                            <p>
+                                Weather information helps you consider
+                                possible changes in customer visits.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="profile account business name business type username email password change edit">
+                        <span class="help-topic-number">8</span>
+
+                        <div>
+                            <h2>Changing your account information</h2>
+
+                            <ol>
+                                <li>Select your profile picture.</li>
+                                <li>Select Edit profile.</li>
+                                <li>Change the information you need.</li>
+                                <li>Select Save changes.</li>
+                            </ol>
+
+                            <p>
+                                A code may be sent to your email when
+                                you change important account information.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="forgot password reset cannot sign in login email code">
+                        <span class="help-topic-number">9</span>
+
+                        <div>
+                            <h2>If you forgot your password</h2>
+
+                            <ol>
+                                <li>Open the Sign in page.</li>
+                                <li>Select Forgot password.</li>
+                                <li>Enter your email address.</li>
+                                <li>Enter the code sent to your email.</li>
+                                <li>Create a new password.</li>
+                            </ol>
+                        </div>
+                    </article>
+
+                    <article class="card help-topic"
+                        data-search="problem error not working email code forecast stock refresh">
+                        <span class="help-topic-number">10</span>
+
+                        <div>
+                            <h2>Common problems</h2>
+
+                            <details>
+                                <summary>I did not receive an email code</summary>
+                                <p>
+                                    Check your Spam folder. Make sure the email
+                                    address is correct, then try again.
+                                </p>
+                            </details>
+
+                            <details>
+                                <summary>The forecast has no results</summary>
+                                <p>
+                                    Add products and record sales regularly.
+                                    The forecast needs past sales before it
+                                    can show useful results.
+                                </p>
+                            </details>
+
+                            <details>
+                                <summary>My stock amount looks wrong</summary>
+                                <p>
+                                    Open Stock and check the recent updates.
+                                    Add a correction using Update stock.
+                                </p>
+                            </details>
+
+                            <details>
+                                <summary>A page does not update</summary>
+                                <p>
+                                    Refresh the page. If the problem continues,
+                                    sign out and sign in again.
+                                </p>
+                            </details>
+                        </div>
+                    </article>
+                </section>
+
+                <section id="help-no-results" class="card help-no-results" hidden>
+                    <h2>No help topic found</h2>
+                    <p>
+                        Try a shorter search such as “sales,”
+                        “stock,” “forecast,” or “password.”
+                    </p>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const input = document.getElementById("help-search");
+            const searchButton = document.getElementById(
+                "help-search-button"
+            );
+            const clearButton = document.getElementById(
+                "help-clear-button"
+            );
+            const topics = Array.from(
+                document.querySelectorAll(".help-topic")
+            );
+            const resultsCount = document.getElementById(
+                "help-results-count"
+            );
+            const noResults = document.getElementById(
+                "help-no-results"
+            );
+
+            function runSearch() {
+                const words = input.value
+                    .trim()
+                    .toLowerCase()
+                    .split(/\s+/)
+                    .filter(Boolean);
+
+                let visibleCount = 0;
+
+                topics.forEach(function (topic) {
+                    const searchableText = (
+                        topic.dataset.search
+                        + " "
+                        + topic.textContent
+                    ).toLowerCase();
+
+                    const matches = words.every(function (word) {
+                        return searchableText.includes(word);
+                    });
+
+                    topic.hidden = !matches;
+
+                    if (matches) {
+                        visibleCount += 1;
+                    }
+                });
+
+                clearButton.hidden = words.length === 0;
+                noResults.hidden = visibleCount !== 0;
+
+                resultsCount.textContent = words.length === 0
+                    ? "Showing all help topics"
+                    : `${visibleCount} help topic`
+                    + (visibleCount === 1 ? "" : "s")
+                    + " found";
+            }
+
+            searchButton.addEventListener("click", runSearch);
+
+            input.addEventListener("input", runSearch);
+
+            input.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    runSearch();
+                }
+            });
+
+            clearButton.addEventListener("click", function () {
+                input.value = "";
+                runSearch();
+                input.focus();
+            });
+
+            document.querySelectorAll("[data-help-search]")
+                .forEach(function (button) {
+                    button.addEventListener("click", function () {
+                        input.value = button.dataset.helpSearch;
+                        runSearch();
+                        input.focus();
+                    });
+                });
+        })();
+    </script>
+</body>
+
+</html>

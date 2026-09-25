@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Verify your Gmail | FoodCast</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+
+    <script src="{{ url_for('theme_script') }}"></script>
+</head>
+
+<body class="registration-page">
+    <main class="registration-card verification-card">
+        <header class="registration-heading">
+            <img class="registration-main-logo" src="{{ url_for('static', filename='images/logo.png') }}"
+                alt="FoodCast logo">
+
+            <h1>Verify your email</h1>
+
+            <p>
+                Enter the six-digit code sent to
+                <strong>{{ email }}</strong>.
+            </p>
+        </header>
+
+        {% if error %}
+        <p class="registration-error" role="alert">{{ error }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('verify_registration_email') }}" class="registration-form">
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="registration-field">
+                <label for="verification_code">Verification code</label>
+
+                <input class="verification-code-input" type="text" id="verification_code" name="verification_code"
+                    inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"
+                    placeholder="000000" required>
+            </div>
+
+            <button type="submit" class="registration-submit">
+                Verify and create account
+            </button>
+        </form>
+
+        <footer class="registration-footer">
+            <p>
+                <a href="{{ url_for('register') }}">
+                    Return to registration
+                </a>
+            </p>
+        </footer>
+    </main>
+</body>
+
+</html>

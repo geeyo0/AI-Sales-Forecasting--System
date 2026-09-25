@@ -1,0 +1,245 @@
+.help-page {
+    display: grid;
+    gap: 20px;
+}
+
+.help-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.help-heading h1 {
+    margin: 0;
+    font-size: clamp(25px, 2.5vw, 36px);
+}
+
+.help-heading p {
+    margin: 5px 0 0;
+    color: var(--ink-soft);
+}
+
+.help-title-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 62px;
+    width: 62px;
+    height: 62px;
+    color: var(--green-dark);
+    background: var(--green-light);
+    border-radius: 18px;
+}
+
+.help-title-icon svg {
+    width: 29px;
+    height: 29px;
+}
+
+.help-search-card {
+
+    padding: 24px;
+    background:
+        linear-gradient(120deg,
+            var(--card),
+            var(--green-light));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.help-search-card>label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.help-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 58px;
+    padding: 6px 8px 6px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+}
+
+.help-search-box:focus-within {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(62, 143, 83, 0.12);
+}
+
+.help-search-box svg {
+    flex: 0 0 23px;
+    width: 23px;
+    height: 23px;
+    color: var(--green-dark);
+}
+
+.help-search-box input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    color: var(--ink);
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+}
+
+.help-search-box button {
+    min-height: 44px;
+    padding: 0 18px;
+    color: #fff;
+    background: var(--green);
+    border: 0;
+    border-radius: 11px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.help-search-box #help-clear-button {
+    color: var(--ink-soft);
+    background: transparent;
+}
+
+.help-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.help-quick-links button {
+    padding: 8px 14px;
+    color: var(--green-dark);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.help-quick-links button:hover {
+    background: var(--green-light);
+}
+
+.help-results-count {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+}
+
+.help-topic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.help-topic {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px;
+}
+
+.help-topic[hidden] {
+    display: none;
+}
+
+.help-topic-number {
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    color: var(--green-dark);
+    background: var(--green-light);
+    border-radius: 11px;
+    font-weight: 800;
+}
+
+.help-topic h2 {
+    margin: 3px 0 12px;
+    font-size: 18px;
+}
+
+.help-topic p,
+.help-topic li {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.help-topic p {
+    margin: 10px 0 0;
+}
+
+.help-topic ul,
+.help-topic ol {
+    margin: 0;
+    padding-left: 21px;
+}
+
+.help-topic details {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.help-topic summary {
+    color: var(--ink);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.help-no-results {
+    padding: 38px;
+    text-align: center;
+}
+
+.help-no-results[hidden] {
+    display: none;
+}
+
+.help-no-results h2 {
+    margin-bottom: 8px;
+}
+
+.help-no-results p {
+    color: var(--ink-soft);
+}
+
+@media (max-width: 850px) {
+    .help-topic-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .help-search-box {
+        flex-wrap: wrap;
+        padding: 12px;
+    }
+
+    .help-search-box input {
+        flex-basis: calc(100% - 35px);
+    }
+
+    .help-search-box button {
+        flex: 1 1 auto;
+    }
+
+    .help-topic {
+        padding: 18px;
+    }
+}
+@media (max-width: 760px) {
+    .help-search-card {
+        padding: 16px;
+    }
+}
+
