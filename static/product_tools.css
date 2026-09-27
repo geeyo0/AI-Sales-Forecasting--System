@@ -42,6 +42,9 @@
 .cashier-account-form input:not([type="checkbox"]):focus { background-color:#fff; border-color:var(--green); outline:2px solid var(--green-light); outline-offset:1px; }
 html[data-theme="dark"] .cashier-account-form input:not([type="checkbox"]) { background-color:#29332c; border-color:var(--border); }
 html[data-theme="dark"] .cashier-account-form input:not([type="checkbox"]):focus { background-color:#202923; }
+.cashier-accounts-page > .products-page-heading { margin-bottom:20px; }
+.cashier-accounts-page > .card { padding:20px; }
+.cashier-accounts-page > .card + .card { margin-top:16px; }
 .tools-stack .btn { justify-self:start; }
 .cashier-password-input { position:relative; display:block; }
 .tools-stack .cashier-password-input input { padding-right:48px; }
