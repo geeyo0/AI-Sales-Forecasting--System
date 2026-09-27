@@ -55,6 +55,16 @@
             <span class="menu-label">Business accounts</span>
         </button>
 
+        {% elif g.user['role'] == 'Cashier' %}
+
+        <a href="{{ url_for('cashier_sales') }}"
+            class="nav-item{% if request.endpoint == 'cashier_sales' %} active{% endif %}"
+            aria-label="Sales transactions" title="Sales transactions"
+            {% if request.endpoint == 'cashier_sales' %}aria-current="page"{% endif %}>
+            {{ menu_icon('sales') }}
+            <span class="menu-label">Sales transactions</span>
+        </a>
+
         {% else %}
 
         {% set navigation = [
@@ -62,6 +72,7 @@
         ('business_products', 'products', 'Products'),
         ('business_inventory', 'stock', 'Stock'),
         ('business_sales', 'sales', 'Sales'),
+        ('business_cashiers', 'accounts', 'Cashiers'),
         ('business_forecasting', 'forecast', 'Sales forecast'),
         ('business_tips', 'tips', 'Business tips')
         ] %}
@@ -80,7 +91,7 @@
     </nav>
 
     <div class="sidebar-actions">
-    {% if g.user['role'] != 'Admin' %}
+    {% if g.user['role'] == 'Business' %}
     <a
         href="{{ url_for('user_manual') }}"
         class="nav-item{% if request.endpoint == 'user_manual' %} active{% endif %}"

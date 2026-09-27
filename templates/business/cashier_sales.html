@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sales transactions | FoodCast AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sales.css') }}">
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+
+<body>
+    <div class="shell">
+        {% include "business/sidebar.html" %}
+        <div class="main">
+            <header class="foodcast-global-topbar">
+                <strong>{{ business["business_name"] }}</strong>
+                <span>Cashier: {{ g.user["username"] }}</span>
+            </header>
+            <main class="content sales-page">
+                <section class="products-page-heading">
+                    <div class="products-page-title">
+                        <div>
+                            <h1>Sales transactions</h1>
+                            <p>Record completed customer sales for {{ business["business_name"] }}.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {% for message in get_flashed_messages(category_filter=["sales_success"]) %}
+                <div class="business-success" role="status">{{ message }}</div>
+                {% endfor %}
+                {% if error %}
+                <div class="business-error" role="alert">{{ error }}</div>
+                {% endif %}
+
+                <section class="card cashier-panel" aria-labelledby="cashier-title">
+                    <div class="cashier-header">
+                        <div>
+                            <p class="cashier-kicker">Cashier</p>
+                            <h2 id="cashier-title">New transaction</h2>
+                            <p class="sales-help">Add products, check the order, then complete the sale.</p>
+                        </div>
+                    </div>
+
+                    {% if products %}
+                    <form method="post" class="cashier-form" id="cashier-transaction-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="cart_json" id="cashier_cart_json" value="{{ cart_json }}">
+
+                        <div class="cashier-field cashier-field-wide">
+                            <label for="cashier_product_search">Find a product</label>
+                            <input type="search" id="cashier_product_search" placeholder="Search menu items" autocomplete="off">
+                        </div>
+                        <div class="cashier-field cashier-field-wide">
+                            <label for="cashier_product_id">Available product</label>
+                            <select id="cashier_product_id">
+                                <option value="">Choose a product</option>
+                                {% for product in products %}
+                                <option value="{{ product['product_id'] }}"
+                                    data-name="{{ product['product_name'] }}"
+                                    data-unit="{{ product['selling_unit'] }}"
+                                    data-price="{{ product['selling_price'] }}"
+                                    data-available="{{ product['available_stock'] }}"
+                                    {% if product['available_stock'] <= 0 %}disabled{% endif %}>
+                                    {{ product["product_name"] }} — ₱{{ "{:,.2f}".format(product["selling_price"]) }} / {{ product["selling_unit"] }} ({{ product["available_stock"] }} available)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="cashier-field">
+                            <label for="cashier_quantity_sold">Quantity</label>
+                            <input type="number" id="cashier_quantity_sold" min="1" max="2147483647" step="1" value="1" required inputmode="numeric">
+                        </div>
+                        <div class="cashier-field">
+                            <span class="cashier-field-label">Availability</span>
+                            <p class="cashier-availability" id="cashier_availability" aria-live="polite">Choose an available product.</p>
+                        </div>
+                        <div class="cashier-actions cashier-add-action">
+                            <button type="button" class="btn btn-outline" id="cashier_add_item">Add item</button>
+                        </div>
+                        <p class="cashier-status" id="cashier_status" role="status" aria-live="polite"></p>
+                        <div class="cashier-order" aria-live="polite">
+                            <h3>Current transaction</h3>
+                            <div class="table-scroll">
+                                <table class="cashier-order-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Item</th>
+                                            <th scope="col">Price</th>
+                                            <th scope="col">Quantity</th>
+                                            <th scope="col">Subtotal</th>
+                                            <th scope="col" aria-label="Actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cashier_order_items"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="cashier-total-box">
+                            <span class="cashier-field-label">Transaction total</span>
+                            <strong id="cashier_total_display">₱0.00</strong>
+                        </div>
+                        <div class="cashier-actions">
+                            <button type="button" class="btn btn-outline" id="cashier_clear_btn">Clear</button>
+                            <button type="submit" class="btn btn-primary" id="cashier_complete_btn">Complete Transaction</button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <p class="sales-help">No products are available yet. Ask your manager to add products and stock.</p>
+                    {% endif %}
+                </section>
+
+                <section class="card">
+                    <h2 class="section-title">Your recent transactions</h2>
+                    {% if recent_transactions %}
+                    <div class="table-scroll">
+                        <table class="sales-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Transaction ID</th>
+                                    <th scope="col">Date and time</th>
+                                    <th scope="col">Items</th>
+                                    <th scope="col">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td>{{ transaction["transaction_code"] }}</td>
+                                    <td>{{ transaction["completed_at"].strftime("%b %d, %Y %I:%M %p") }}</td>
+                                    <td>{{ transaction["item_count"] }}</td>
+                                    <td>₱{{ "{:,.2f}".format(transaction["total_amount"]) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="sales-help">Your completed transactions will appear here.</p>
+                    {% endif %}
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const product = document.getElementById("cashier_product_id");
+            const quantity = document.getElementById("cashier_quantity_sold");
+            const cartInput = document.getElementById("cashier_cart_json");
+            const orderItems = document.getElementById("cashier_order_items");
+            const totalDisplay = document.getElementById("cashier_total_display");
+            const status = document.getElementById("cashier_status");
+            const form = document.getElementById("cashier-transaction-form");
+
+            if (!form) return;
+
+            let cart = [];
+            const formatMoney = (cents) =>
+                `₱${(cents / 100).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
+
+            try {
+                const savedCart = JSON.parse(cartInput.value || "[]");
+                if (Array.isArray(savedCart)) {
+                    cart = savedCart.filter((item) =>
+                        item &&
+                        Number.isInteger(Number(item.product_id)) &&
+                        Number.isInteger(Number(item.quantity)) &&
+                        Number(item.quantity) > 0 &&
+                        product.querySelector(`option[value="${Number(item.product_id)}"]`)
+                    ).map((item) => ({
+                        product_id: Number(item.product_id),
+                        quantity: Number(item.quantity)
+                    }));
+                }
+            } catch {
+                cart = [];
+            }
+
+            function renderCart() {
+                orderItems.replaceChildren();
+                let total = 0;
+
+                if (!cart.length) {
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+                    cell.colSpan = 5;
+                    cell.className = "cashier-empty-cart";
+                    cell.textContent = "No items added yet.";
+                    row.append(cell);
+                    orderItems.append(row);
+                }
+
+                cart.forEach((item, index) => {
+                    const option = product.querySelector(`option[value="${item.product_id}"]`);
+                    const unitCents = Math.round(Number(option.dataset.price) * 100);
+                    const subtotal = unitCents * item.quantity;
+                    total += subtotal;
+                    const row = document.createElement("tr");
+                    const name = document.createElement("td");
+                    name.textContent = option.dataset.name;
+                    row.append(name);
+                    const price = document.createElement("td");
+                    price.textContent = formatMoney(unitCents);
+                    row.append(price);
+                    const quantityCell = document.createElement("td");
+                    const quantityInput = document.createElement("input");
+                    quantityInput.type = "number";
+                    quantityInput.min = "1";
+                    quantityInput.max = option.dataset.available;
+                    quantityInput.value = String(item.quantity);
+                    quantityInput.setAttribute("aria-label", `Quantity for ${option.dataset.name}`);
+                    quantityInput.addEventListener("change", () => {
+                        const next = Number(quantityInput.value);
+                        const otherQuantity = cart.reduce((sum, other, otherIndex) =>
+                            otherIndex !== index && other.product_id === item.product_id
+                                ? sum + other.quantity
+                                : sum, 0);
+                        if (
+                            !Number.isInteger(next) ||
+                            next < 1 ||
+                            next + otherQuantity > Number(option.dataset.available)
+                        ) {
+                            quantityInput.value = String(item.quantity);
+                            return;
+                        }
+                        item.quantity = next;
+                        renderCart();
+                    });
+                    quantityCell.append(quantityInput);
+                    row.append(quantityCell);
+                    const subtotalCell = document.createElement("td");
+                    subtotalCell.textContent = formatMoney(subtotal);
+                    row.append(subtotalCell);
+                    const action = document.createElement("td");
+                    const remove = document.createElement("button");
+                    remove.type = "button";
+                    remove.className = "btn btn-outline cashier-remove-item";
+                    remove.textContent = "Remove";
+                    remove.addEventListener("click", () => {
+                        cart.splice(index, 1);
+                        renderCart();
+                    });
+                    action.append(remove);
+                    row.append(action);
+                    orderItems.append(row);
+                });
+
+                totalDisplay.textContent = formatMoney(total);
+                cartInput.value = JSON.stringify(cart);
+            }
+
+            document.getElementById("cashier_product_id").addEventListener("change", () => {
+                const option = product.selectedOptions[0];
+                document.getElementById("cashier_availability").textContent =
+                    option?.value
+                        ? `${option.dataset.available} ${option.dataset.unit} available`
+                        : "Choose an available product.";
+            });
+
+            document.getElementById("cashier_product_search").addEventListener("input", (event) => {
+                const term = event.target.value.trim().toLocaleLowerCase();
+                Array.from(product.options).forEach((option) => {
+                    option.hidden = Boolean(
+                        option.value && !option.dataset.name.toLocaleLowerCase().includes(term)
+                    );
+                });
+            });
+
+            document.getElementById("cashier_add_item").addEventListener("click", () => {
+                const option = product.selectedOptions[0];
+                const count = Number(quantity.value);
+                if (!option?.value || !Number.isInteger(count) || count < 1) {
+                    status.textContent = "Choose a product and enter a positive whole-number quantity.";
+                    return;
+                }
+                const existing = cart.find((item) => item.product_id === Number(option.value));
+                if (count + (existing?.quantity || 0) > Number(option.dataset.available)) {
+                    status.textContent = `Only ${option.dataset.available} ${option.dataset.unit} are available.`;
+                    return;
+                }
+                if (existing) existing.quantity += count;
+                else cart.push({ product_id: Number(option.value), quantity: count });
+                status.textContent = "";
+                quantity.value = "1";
+                renderCart();
+            });
+
+            document.getElementById("cashier_clear_btn").addEventListener("click", () => {
+                cart.splice(0);
+                status.textContent = "";
+                renderCart();
+                product.focus();
+            });
+
+            form.addEventListener("submit", (event) => {
+                if (!cart.length) {
+                    event.preventDefault();
+                    status.textContent = "Add at least one item before completing the transaction.";
+                    product.focus();
+                    return;
+                }
+                document.getElementById("cashier_complete_btn").disabled = true;
+                cartInput.value = JSON.stringify(cart);
+            });
+
+            renderCart();
+        })();
+    </script>
+</body>
+
+</html>

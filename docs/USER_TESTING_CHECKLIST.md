@@ -26,6 +26,9 @@ Use the following result values:
 | 1.8 | Enter the correct verification code | The account is created successfully | | |
 | 1.9 | Sign in with the new account | A sign-in verification code is sent | | |
 | 1.10 | Complete sign-in verification | The business Home page opens | | |
+| 1.11 | Manager creates a cashier account | A separate cashier login is linked only to the manager's business | | |
+| 1.12 | Sign in as an active cashier with correct username and password | The cashier opens Sales transactions without requiring email verification and cannot access manager pages | | |
+| 1.13 | Manager disables a cashier account | The disabled cashier cannot access transactions | | |
 
 ## 2. Products
 
@@ -44,6 +47,13 @@ Use the following result values:
 
 | No. | Test | Expected result | Actual result | Status |
 |---|---|---|---|---|
+| 3.0 | Open the Sales page when sales records exist | The page loads and each sale date is displayed correctly | | |
+| 3.0a | Add several available products to one transaction | The order shows each item, quantity, price, subtotals, and the correct total | | |
+| 3.0b | Change an item quantity or remove an item | The order summary and total update correctly | | |
+| 3.0c | Complete a transaction | A unique transaction ID, completion time, cashier, item details, total, and Completed status are saved | | |
+| 3.0d | Complete a transaction with insufficient stock | No transaction is saved and no inventory or sales totals change | | |
+| 3.0e | Complete multiple transactions for the same product on one day | Each transaction is retained and daily sales are accumulated for the forecast | | |
+| 3.0f | View the manager dashboard after checkout | Today’s sales, transaction count, and stock levels reflect the completed transaction | | |
 | 3.1 | Record a valid sale | The sale appears in the sales list | | |
 | 3.2 | Record a sale without selecting a product | The system asks the user to select a product | | |
 | 3.3 | Enter a negative quantity | The system rejects the quantity | | |

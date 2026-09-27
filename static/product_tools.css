@@ -38,7 +38,18 @@
 .tools-help { color:var(--ink-soft); font-size:13px; line-height:1.6; margin:12px 0; }
 .tools-stack { display:grid; gap:10px; max-width:600px; margin-top:16px; }
 .tools-stack input:not([type="checkbox"]), .tools-stack select, .import-review input:not([type="checkbox"]), .import-review select { min-height:44px; width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--ink); }
+.cashier-account-form input:not([type="checkbox"]) { background-color:#f1f3f2; border-color:#d5dcd7; }
+.cashier-account-form input:not([type="checkbox"]):focus { background-color:#fff; border-color:var(--green); outline:2px solid var(--green-light); outline-offset:1px; }
+html[data-theme="dark"] .cashier-account-form input:not([type="checkbox"]) { background-color:#29332c; border-color:var(--border); }
+html[data-theme="dark"] .cashier-account-form input:not([type="checkbox"]):focus { background-color:#202923; }
 .tools-stack .btn { justify-self:start; }
+.cashier-password-input { position:relative; display:block; }
+.tools-stack .cashier-password-input input { padding-right:48px; }
+.cashier-password-toggle { position:absolute; top:0; right:0; display:grid; width:44px; height:100%; place-items:center; padding:0; color:var(--ink-soft); background:transparent; border:0; border-radius:8px; cursor:pointer; }
+.cashier-password-toggle:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+.cashier-password-toggle svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.cashier-password-toggle .cashier-password-slash { display:block; }
+.cashier-password-toggle.is-visible .cashier-password-slash { display:none; }
 .tools-checkbox { display:flex; align-items:center; gap:10px; }
 .tools-inline { margin-top:12px; }
 .tools-dialog { padding:24px; width:min(440px, calc(100vw - 32px)); max-height:85dvh; overflow:auto; border:1px solid var(--border); border-radius:14px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }

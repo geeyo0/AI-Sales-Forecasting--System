@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(254) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
 
-    role ENUM('Admin', 'Business') NOT NULL,
+    role ENUM('Admin', 'Business', 'Cashier') NOT NULL,
 
     admin_slot TINYINT
         GENERATED ALWAYS AS (
@@ -53,6 +53,28 @@ CREATE TABLE IF NOT EXISTS businesses (
         FOREIGN KEY (user_id)
         REFERENCES users(user_id)
         ON DELETE RESTRICT
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS business_cashiers (
+    business_cashier_id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT NOT NULL,
+    user_id INT NOT NULL UNIQUE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_business_cashier_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(business_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_business_cashier_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE RESTRICT,
+
+    INDEX idx_business_cashiers_business (business_id, is_active)
 ) ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;

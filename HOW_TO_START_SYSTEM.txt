@@ -34,6 +34,19 @@ STEP 1: START THE DATABASE
 Apache is not required because FoodCast uses Flask as its web
 server. Only MySQL needs to be running in XAMPP.
 
+DATABASE UPDATE FOR SALES TRANSACTIONS
+
+If this is an existing FoodCast database, apply
+database/migrations/add_sales_transactions.sql once with your MySQL
+client before starting the updated application. New installations
+should include the sales_transactions tables from database/sales.sql.
+
+If this is an existing database, also apply
+database/migrations/add_cashier_accounts.sql once to enable separate
+cashier sign-ins. Managers can then create and disable cashier accounts
+from the Cashiers page. New installations should use the updated
+database/accounts.sql schema.
+
 
 ------------------------------------------------------------
 OPTION 1: START USING start-system.bat
@@ -72,7 +85,7 @@ OPTION 2: START USING POWERSHELL OR THE VS CODE TERMINAL
 
 4. Start the Flask application:
 
-   python -m flask --app app run --host 127.0.0.1 --port 5001
+   python -m flask --app app run --host 0.0.0.0 --port 5001
 
 5. Open this address in your browser:
 
@@ -92,7 +105,7 @@ IF POWERSHELL BLOCKS VIRTUAL-ENVIRONMENT ACTIVATION
 You can start the application without activating the virtual
 environment. Run:
 
-.\.venv\Scripts\python.exe -m flask --app app run --host 127.0.0.1 --port 5001
+.\.venv\Scripts\python.exe -m flask --app app run --host 0.0.0.0 --port 5001
 
 
 ============================================================
@@ -145,19 +158,39 @@ EMAIL VERIFICATION
 ============================================================
 
 Registration, MFA, password reset, and email-change verification
-require the FoodCast sender-email settings.
+require SMTP credentials. Manager and administrator sign-ins use email
+MFA. Cashier accounts are created by the manager and can sign in with
+their username and password; managers can disable their access.
 
-Set them in the same PowerShell window before starting Flask:
+For Gmail, create a Google App Password and set these in the same
+PowerShell window used to start Flask:
 
 $env:FOODCAST_EMAIL = "your_sender_email@gmail.com"
 $env:FOODCAST_EMAIL_APP_PASSWORD = "your_google_app_password"
+$env:FOODCAST_SMTP_HOST = "smtp.gmail.com"
+$env:FOODCAST_SMTP_PORT = "587"
+$env:FOODCAST_SMTP_SECURITY = "starttls"
 
-Then start the system:
+Then start (or restart) the Flask application in that window:
 
-python -m flask --app app run --host 127.0.0.1 --port 5001
+python -m flask --app app run --host 0.0.0.0 --port 5001
 
 Use a Google App Password for FOODCAST_EMAIL_APP_PASSWORD.
 Do not use the regular password of the Gmail account.
+
+For another SMTP provider, use its server hostname and port. Use
+FOODCAST_SMTP_SECURITY=starttls for STARTTLS (commonly port 587) or
+FOODCAST_SMTP_SECURITY=ssl for implicit TLS (commonly port 465).
+FOODCAST_SMTP_PASSWORD can be used instead of
+FOODCAST_EMAIL_APP_PASSWORD for a provider's SMTP password.
+
+For GitHub Codespaces, add FOODCAST_EMAIL,
+FOODCAST_EMAIL_APP_PASSWORD (or FOODCAST_SMTP_PASSWORD),
+FOODCAST_SMTP_HOST, FOODCAST_SMTP_PORT, and
+FOODCAST_SMTP_SECURITY as Codespaces secrets in GitHub Settings.
+Restart the Codespace so the secrets are added to its environment, then
+restart Flask. Adding a secret does not update an already-running Flask
+process.
 
 
 ============================================================
@@ -178,6 +211,9 @@ The system cannot connect to the database.
 
 SOLUTION:
 Open XAMPP and make sure MySQL is running.
+If you are using VS Code or Codespaces, make sure a MySQL server is
+available in that environment; the MySQL service on your own computer
+is not reachable from the forwarded application.
 
 
 PROBLEM:
@@ -210,8 +246,11 @@ PROBLEM:
 Email verification cannot be sent.
 
 SOLUTION:
-Check FOODCAST_EMAIL and FOODCAST_EMAIL_APP_PASSWORD, and make
-sure the sender Gmail account uses a valid Google App Password.
+Set FOODCAST_EMAIL and FOODCAST_EMAIL_APP_PASSWORD (or
+FOODCAST_SMTP_PASSWORD) in the environment used to start Flask.
+Check the SMTP host, port, and security mode for your provider, then
+restart Flask. For Codespaces, add the values as Codespaces secrets and
+restart the Codespace first. Do not disable email verification.
 
 
 ============================================================

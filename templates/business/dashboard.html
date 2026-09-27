@@ -114,6 +114,24 @@
 
                     <article class="card home-metric-card">
                         <div>
+                            <h2>Today’s transactions</h2>
+
+                            <p class="home-total">
+                                {{ "{:,.0f}".format(totals["today_transactions"]) }}
+                            </p>
+
+                            <p class="home-note">
+                                Completed sales today
+                            </p>
+                        </div>
+
+                        <span class="home-metric-icon">
+    {{ home_icon("cart") }}
+</span>
+                    </article>
+
+                    <article class="card home-metric-card">
+                        <div>
                             <h2>This week’s sales</h2>
 
                             <p class="home-total">

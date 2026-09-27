@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cashier accounts | FoodCast AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='business.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='product_tools.css') }}">
+    <script src="{{ url_for('theme_script') }}"></script>
+    <script src="{{ url_for('sidebar_script') }}"></script>
+</head>
+
+<body>
+    <div class="shell">
+        {% include "business/sidebar.html" %}
+        <div class="main">
+            {% include "business/header.html" %}
+            <main class="content sales-page">
+                <section class="products-page-heading">
+                    <div class="products-page-title">
+                        <span class="products-title-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"></circle>
+                                <path d="M4 21a8 8 0 0 1 16 0"></path>
+                            </svg>
+                        </span>
+                        <div>
+                            <h1>Cashier accounts</h1>
+                            <p>Manage staff accounts for {{ business["business_name"] }}.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {% for message in get_flashed_messages(category_filter=["cashier_success"]) %}
+                <div class="business-success" role="status">{{ message }}</div>
+                {% endfor %}
+                {% if error %}
+                <div class="business-error" role="alert">{{ error }}</div>
+                {% endif %}
+
+                <section class="card">
+                    <h2 class="section-title">Add a cashier</h2>
+                    <p class="sales-help">The cashier will sign in with this username and email. The email is used for sign-in verification.</p>
+                    <form method="post" class="tools-stack cashier-account-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label for="cashier_username">Username</label>
+                        <input id="cashier_username" name="username" maxlength="50" required value="{{ values['username'] }}" autocomplete="off">
+                        <label for="cashier_email">Email</label>
+                        <input id="cashier_email" type="email" name="email" maxlength="254" required value="{{ values['email'] }}" autocomplete="email">
+                        <label for="cashier_password">Temporary password</label>
+                        <span class="cashier-password-input">
+                            <input id="cashier_password" type="password" name="password" minlength="12" maxlength="128" required autocomplete="new-password">
+                            <button type="button" class="cashier-password-toggle" aria-label="Show password" aria-controls="cashier_password" aria-pressed="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path class="cashier-password-slash" d="m4 4 16 16"></path>
+                                </svg>
+                            </button>
+                        </span>
+                        <label for="cashier_confirm_password">Confirm password</label>
+                        <span class="cashier-password-input">
+                            <input id="cashier_confirm_password" type="password" name="confirm_password" minlength="12" maxlength="128" required autocomplete="new-password">
+                            <button type="button" class="cashier-password-toggle" aria-label="Show password" aria-controls="cashier_confirm_password" aria-pressed="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path class="cashier-password-slash" d="m4 4 16 16"></path>
+                                </svg>
+                            </button>
+                        </span>
+                        <p class="sales-help">Use at least 12 characters with an uppercase letter, lowercase letter, number, and symbol. The cashier can use Forgot password to replace the temporary password.</p>
+                        <div class="tools-buttons">
+                            <button type="submit" class="btn btn-primary">Create cashier account</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2 class="section-title">Staff access</h2>
+                    {% if cashiers %}
+                    <div class="table-scroll">
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Username</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Created</th>
+                                    <th scope="col">Access</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cashier in cashiers %}
+                                <tr>
+                                    <td>{{ cashier["username"] }}</td>
+                                    <td>{{ cashier["email"] }}</td>
+                                    <td>{{ cashier["created_at"].strftime("%b %d, %Y") }}</td>
+                                    <td>{{ "Active" if cashier["is_active"] else "Disabled" }}</td>
+                                    <td>
+                                        <form method="post" action="{{ url_for('update_cashier_status', cashier_user_id=cashier['user_id']) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="is_active" value="{{ '0' if cashier['is_active'] else '1' }}">
+                                            <button class="btn btn-outline" type="submit">{{ "Disable" if cashier["is_active"] else "Enable" }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="sales-help">No cashier accounts have been added.</p>
+                    {% endif %}
+                </section>
+            </main>
+        </div>
+    </div>
+        <script>
+            document.querySelectorAll(".cashier-password-toggle").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const input = document.getElementById(button.getAttribute("aria-controls"));
+                    const isVisible = input.type === "password";
+
+                    input.type = isVisible ? "text" : "password";
+                    button.setAttribute("aria-pressed", String(isVisible));
+                    button.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
+                    button.classList.toggle("is-visible", isVisible);
+                });
+            });
+        </script>
+</body>
+
+</html>

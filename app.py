@@ -7,6 +7,8 @@ import math
 import hashlib
 import re
 import smtplib
+import ssl
+import uuid
 
 from email.message import EmailMessage
 from functools import wraps
@@ -111,6 +113,22 @@ def load_user():
 
             g.user = cursor.fetchone()
 
+        if g.user and g.user["role"] == "Cashier":
+            with get_db().cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT business_cashier_id
+                    FROM business_cashiers
+                    WHERE user_id = %s
+                      AND is_active = TRUE
+                    LIMIT 1
+                    """,
+                    (user_id,),
+                )
+
+                if cursor.fetchone() is None:
+                    g.user = None
+
         if g.user is None:
             session.clear()
 
@@ -140,6 +158,304 @@ def business_required(view):
         return view(*args, **kwargs)
 
     return wrapped_view
+
+
+def cashier_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if g.user is None:
+            return redirect(url_for("login"))
+
+        if g.user["role"] != "Cashier":
+            abort(403)
+
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+def get_business_for_user(user_id, role):
+    with get_db().cursor() as cursor:
+        if role == "Business":
+            cursor.execute(
+                """
+                SELECT business_id, business_name, business_type
+                FROM businesses
+                WHERE user_id = %s
+                """,
+                (user_id,),
+            )
+        elif role == "Cashier":
+            cursor.execute(
+                """
+                SELECT
+                    businesses.business_id,
+                    businesses.business_name,
+                    businesses.business_type
+                FROM business_cashiers
+                INNER JOIN businesses
+                    ON businesses.business_id =
+                        business_cashiers.business_id
+                WHERE business_cashiers.user_id = %s
+                  AND business_cashiers.is_active = TRUE
+                """,
+                (user_id,),
+            )
+        else:
+            return None
+
+        return cursor.fetchone()
+
+
+def complete_sales_transaction(business_id, cashier_user_id, cart_json):
+    if not cart_json or len(cart_json) > 20000:
+        raise ValueError("Review the items in this transaction and try again.")
+
+    try:
+        cart = json.loads(cart_json)
+    except (json.JSONDecodeError, TypeError):
+        raise ValueError(
+            "Review the items in this transaction and try again."
+        ) from None
+
+    if not isinstance(cart, list) or not 1 <= len(cart) <= 100:
+        raise ValueError("Add at least one product to the transaction.")
+
+    quantities = {}
+
+    for item in cart:
+        if not isinstance(item, dict):
+            raise ValueError(
+                "Review the items in this transaction and try again."
+            )
+
+        product_id = item.get("product_id")
+        quantity = item.get("quantity")
+
+        if (
+            isinstance(product_id, bool)
+            or isinstance(quantity, bool)
+            or not isinstance(product_id, (int, str))
+            or not isinstance(quantity, (int, str))
+            or (
+                isinstance(product_id, str)
+                and not product_id.isdecimal()
+            )
+            or (
+                isinstance(quantity, str)
+                and not quantity.isdecimal()
+            )
+        ):
+            raise ValueError(
+                "Enter a valid whole-number quantity for each product."
+            )
+
+        product_id = int(product_id)
+        quantity = int(quantity)
+
+        if quantity < 1 or quantity > 2147483647:
+            raise ValueError(
+                "Each product quantity must be a positive whole number."
+            )
+
+        quantities[product_id] = quantities.get(product_id, 0) + quantity
+
+        if quantities[product_id] > 2147483647:
+            raise ValueError("The quantity for a product is too large.")
+
+    database = get_db()
+    transaction_code = uuid.uuid4().hex.upper()
+    completed_at = datetime.now(
+        timezone(timedelta(hours=8))
+    ).replace(tzinfo=None)
+    product_ids = sorted(quantities)
+    placeholders = ", ".join(["%s"] * len(product_ids))
+
+    try:
+        database.begin()
+
+        with database.cursor() as cursor:
+            cursor.execute(
+                f"""
+                SELECT
+                    product_id,
+                    product_name,
+                    selling_unit,
+                    selling_price
+                FROM products
+                WHERE business_id = %s
+                  AND product_id IN ({placeholders})
+                ORDER BY product_id
+                FOR UPDATE
+                """,
+                (business_id, *product_ids),
+            )
+            products = {
+                product["product_id"]: product
+                for product in cursor.fetchall()
+            }
+
+            if len(products) != len(product_ids):
+                raise ValueError(
+                    "Choose products available to your business."
+                )
+
+            cursor.execute(
+                f"""
+                SELECT
+                    product_id,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN movement_type IN (
+                                'Stock In', 'Adjustment In'
+                            )
+                            THEN quantity
+                            ELSE -quantity
+                        END
+                    ), 0) AS available_stock
+                FROM stock_movements
+                WHERE product_id IN ({placeholders})
+                GROUP BY product_id
+                """,
+                tuple(product_ids),
+            )
+            stock_by_id = {
+                row["product_id"]: int(row["available_stock"])
+                for row in cursor.fetchall()
+            }
+
+            items = []
+            total_amount = Decimal("0.00")
+
+            for product_id, quantity in quantities.items():
+                product = products[product_id]
+                available = stock_by_id.get(product_id, 0)
+
+                if quantity > available:
+                    raise ValueError(
+                        f"Only {available} {product['selling_unit']} of "
+                        f"{product['product_name']} are available."
+                    )
+
+                unit_price = Decimal(str(product["selling_price"]))
+                line_total = (unit_price * quantity).quantize(
+                    Decimal("0.01")
+                )
+
+                if (
+                    not line_total.is_finite()
+                    or line_total > Decimal("9999999999.99")
+                ):
+                    raise ValueError("The transaction total is too large.")
+
+                items.append({
+                    "product": product,
+                    "quantity": quantity,
+                    "unit_price": unit_price,
+                    "line_total": line_total,
+                })
+                total_amount += line_total
+
+            if total_amount > Decimal("9999999999.99"):
+                raise ValueError("The transaction total is too large.")
+
+            cursor.execute(
+                """
+                INSERT INTO sales_transactions (
+                    transaction_code,
+                    business_id,
+                    cashier_user_id,
+                    completed_at,
+                    status,
+                    total_amount
+                )
+                VALUES (%s, %s, %s, %s, 'Completed', %s)
+                """,
+                (
+                    transaction_code,
+                    business_id,
+                    cashier_user_id,
+                    completed_at,
+                    total_amount,
+                ),
+            )
+            transaction_id = cursor.lastrowid
+
+            for item in items:
+                product = item["product"]
+                product_id = product["product_id"]
+                quantity = item["quantity"]
+                line_total = item["line_total"]
+
+                cursor.execute(
+                    """
+                    INSERT INTO sales_transaction_items (
+                        transaction_id,
+                        product_id,
+                        product_name,
+                        selling_unit,
+                        quantity_sold,
+                        unit_price,
+                        line_total
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        transaction_id,
+                        product_id,
+                        product["product_name"],
+                        product["selling_unit"],
+                        quantity,
+                        item["unit_price"],
+                        line_total,
+                    ),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO daily_sales (
+                        product_id,
+                        sale_date,
+                        quantity_sold,
+                        sales_amount
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        quantity_sold = quantity_sold
+                            + VALUES(quantity_sold),
+                        sales_amount = sales_amount
+                            + VALUES(sales_amount)
+                    """,
+                    (
+                        product_id,
+                        completed_at.date(),
+                        quantity,
+                        line_total,
+                    ),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO stock_movements (
+                        product_id,
+                        movement_type,
+                        quantity,
+                        notes
+                    )
+                    VALUES (%s, 'Sold', %s, %s)
+                    """,
+                    (
+                        product_id,
+                        quantity,
+                        f"Sale transaction {transaction_code}.",
+                    ),
+                )
+
+        database.commit()
+    except Exception:
+        database.rollback()
+        raise
+
+    return transaction_code
+
 
 def csrf_token():
     if "csrf_token" not in session:
@@ -278,6 +594,8 @@ def login():
             return redirect(
                 url_for("admin_dashboard")
             )
+        if g.user["role"] == "Cashier":
+            return redirect(url_for("cashier_sales"))
 
         return redirect(
             url_for("business_dashboard")
@@ -298,23 +616,34 @@ def login():
             "",
         )
 
-        with get_db().cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT
-                    user_id,
-                    username,
-                    email,
-                    password_hash,
-                    role
-                FROM users
-                WHERE username = %s
-                LIMIT 1
-                """,
-                (username,),
-            )
+        try:
+            with get_db().cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        user_id,
+                        username,
+                        email,
+                        password_hash,
+                        role
+                    FROM users
+                    WHERE username = %s
+                    LIMIT 1
+                    """,
+                    (username,),
+                )
 
-            user = cursor.fetchone()
+                user = cursor.fetchone()
+        except pymysql.err.OperationalError:
+            app.logger.exception("Login failed because MySQL is unavailable.")
+            error = (
+                "The database is unavailable. Start MySQL and reload this page "
+                "before signing in."
+            )
+            return render_template(
+                "auth/login.html",
+                error=error,
+            ), 503
 
         if (
             not user
@@ -325,14 +654,33 @@ def login():
         ):
             error = "Incorrect username or password."
 
-        elif user["role"] not in (
-            "Admin",
-            "Business",
-        ):
+        elif user["role"] not in ("Admin", "Business", "Cashier"):
             error = (
                 "This account does not have access "
                 "to the system."
             )
+
+        elif user["role"] == "Cashier":
+            with get_db().cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT business_cashier_id
+                    FROM business_cashiers
+                    WHERE user_id = %s
+                      AND is_active = TRUE
+                    LIMIT 1
+                    """,
+                    (user["user_id"],),
+                )
+
+                cashier_account = cursor.fetchone()
+
+            if cashier_account is None:
+                error = "This cashier account is disabled. Contact your manager."
+            else:
+                session.clear()
+                session["user_id"] = user["user_id"]
+                return redirect(url_for("cashier_sales"))
 
         elif (
             not user["email"]
@@ -345,6 +693,8 @@ def login():
                 return redirect(
                     url_for("admin_dashboard")
                 )
+            if user["role"] == "Cashier":
+                return redirect(url_for("cashier_sales"))
 
             return redirect(
                 url_for("business_dashboard")
@@ -363,13 +713,14 @@ def login():
                 )
 
             except RuntimeError:
-                app.logger.exception(
+                app.logger.error(
                     "FoodCast email settings are missing."
                 )
 
                 error = (
-                    "The email verification service "
-                    "is not configured."
+                    "Email verification is not configured. Set "
+                    "FOODCAST_EMAIL and FOODCAST_EMAIL_APP_PASSWORD "
+                    "for this app, then restart Flask."
                 )
 
             except smtplib.SMTPAuthenticationError:
@@ -483,6 +834,27 @@ def verify_login_mfa():
             user_id = pending["user_id"]
             role = pending["role"]
 
+            if role == "Cashier":
+                with get_db().cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT business_cashier_id
+                        FROM business_cashiers
+                        WHERE user_id = %s
+                          AND is_active = TRUE
+                        LIMIT 1
+                        """,
+                        (user_id,),
+                    )
+
+                    if cursor.fetchone() is None:
+                        session.clear()
+                        flash(
+                            "This cashier account is disabled. Contact your manager.",
+                            "login_error",
+                        )
+                        return redirect(url_for("login"))
+
             device_token = create_trusted_device(
                 user_id
             )
@@ -493,6 +865,10 @@ def verify_login_mfa():
             if role == "Admin":
                 response = redirect(
                     url_for("admin_dashboard")
+                )
+            elif role == "Cashier":
+                response = redirect(
+                    url_for("cashier_sales")
                 )
             else:
                 response = redirect(
@@ -535,12 +911,37 @@ def password_is_strong(password):
 def send_verification_code(recipient, code, purpose):
     sender = os.environ.get("FOODCAST_EMAIL", "").strip()
     app_password = os.environ.get(
-        "FOODCAST_EMAIL_APP_PASSWORD", ""
+        "FOODCAST_SMTP_PASSWORD",
+        os.environ.get("FOODCAST_EMAIL_APP_PASSWORD", ""),
     ).replace(" ", "")
+    smtp_host = os.environ.get(
+        "FOODCAST_SMTP_HOST",
+        "smtp.gmail.com",
+    ).strip()
+    smtp_security = os.environ.get(
+        "FOODCAST_SMTP_SECURITY",
+        "starttls",
+    ).strip().lower()
 
-    if not sender or not app_password:
+    try:
+        smtp_port = int(os.environ.get("FOODCAST_SMTP_PORT", "587"))
+    except ValueError as error:
         raise RuntimeError(
-            "FoodCast email settings have not been configured."
+            "FOODCAST_SMTP_PORT must be a valid port number."
+        ) from error
+
+    if not sender or not app_password or not smtp_host:
+        raise RuntimeError(
+            "Set FOODCAST_EMAIL and FOODCAST_SMTP_PASSWORD "
+            "(or FOODCAST_EMAIL_APP_PASSWORD)."
+        )
+
+    if not 1 <= smtp_port <= 65535:
+        raise RuntimeError("FOODCAST_SMTP_PORT must be between 1 and 65535.")
+
+    if smtp_security not in {"starttls", "ssl"}:
+        raise RuntimeError(
+            "FOODCAST_SMTP_SECURITY must be either 'starttls' or 'ssl'."
         )
 
     if purpose == "login":
@@ -586,8 +987,25 @@ If you did not request this code, you can ignore this email.
 """
     )
 
-    with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as smtp:
-        smtp.starttls()
+    context = ssl.create_default_context()
+
+    if smtp_security == "ssl":
+        connection = smtplib.SMTP_SSL(
+            smtp_host,
+            smtp_port,
+            timeout=15,
+            context=context,
+        )
+    else:
+        connection = smtplib.SMTP(
+            smtp_host,
+            smtp_port,
+            timeout=15,
+        )
+
+    with connection as smtp:
+        if smtp_security == "starttls":
+            smtp.starttls(context=context)
         smtp.login(sender, app_password)
         smtp.send_message(message)
 
@@ -860,6 +1278,8 @@ def register():
     if g.user is not None:
         if g.user["role"] == "Admin":
             return redirect(url_for("admin_dashboard"))
+        if g.user["role"] == "Cashier":
+            return redirect(url_for("cashier_sales"))
 
         return redirect(url_for("business_dashboard"))
 
@@ -1273,7 +1693,7 @@ def add_business():
 
                 return redirect(url_for("admin_dashboard"))
 
-            except pymysql.err.IntegrityError as database_error:
+            except pymysql.err.IntegrityError:
                 database.rollback()
 
                 if database_error.args[0] == 1062:
@@ -1855,6 +2275,216 @@ def generate_business_forecast(business_id, forecast_days):
                 )
 
     return forecast_run_id
+
+@app.route("/business/cashiers", methods=["GET", "POST"])
+@business_required
+def business_cashiers():
+    database = get_db()
+    error = None
+    values = {"username": "", "email": ""}
+
+    with database.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                business_id,
+                business_name,
+                business_type,
+                created_at,
+                location_latitude,
+                location_longitude,
+                location_name,
+                location_accuracy_m,
+                location_updated_at
+            FROM businesses
+            WHERE user_id = %s
+            """,
+            (g.user["user_id"],),
+        )
+        business = cursor.fetchone()
+
+    if business is None:
+        abort(403, description="Your account has no linked business.")
+
+    if request.method == "POST":
+        validate_csrf()
+        values = {
+            "username": request.form.get("username", "").strip(),
+            "email": request.form.get("email", "").strip().lower(),
+        }
+        password = request.form.get("password", "")
+        confirmation = request.form.get("confirm_password", "")
+
+        if not 1 <= len(values["username"]) <= 50:
+            error = "Choose a username using up to 50 characters."
+        elif any(character.isspace() for character in values["username"]):
+            error = "A username cannot contain spaces."
+        elif not is_valid_email(values["email"]):
+            error = "Enter a valid email address."
+        elif not password_is_strong(password):
+            error = (
+                "Use at least 12 characters with an uppercase letter, "
+                "lowercase letter, number, and symbol."
+            )
+        elif password != confirmation:
+            error = "The passwords do not match."
+
+        if error is None:
+            try:
+                database.begin()
+                with database.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT user_id
+                        FROM users
+                        WHERE username = %s
+                           OR LOWER(email) = %s
+                        LIMIT 1
+                        """,
+                        (values["username"], values["email"]),
+                    )
+
+                    if cursor.fetchone():
+                        error = (
+                            "That username or email address is already "
+                            "registered."
+                        )
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO users (
+                                username,
+                                email,
+                                password_hash,
+                                role
+                            )
+                            VALUES (%s, %s, %s, 'Cashier')
+                            """,
+                            (
+                                values["username"],
+                                values["email"],
+                                generate_password_hash(password),
+                            ),
+                        )
+                        cashier_user_id = cursor.lastrowid
+                        cursor.execute(
+                            """
+                            INSERT INTO business_cashiers (
+                                business_id,
+                                user_id
+                            )
+                            VALUES (%s, %s)
+                            """,
+                            (business["business_id"], cashier_user_id),
+                        )
+
+                if error:
+                    database.rollback()
+                else:
+                    database.commit()
+                    flash(
+                        f"Cashier account {values['username']} was created.",
+                        "cashier_success",
+                    )
+                    return redirect(url_for("business_cashiers"))
+            except pymysql.err.IntegrityError as database_error:
+                database.rollback()
+                if database_error.args[0] == 1062:
+                    error = (
+                        "That username or email address is already "
+                        "registered."
+                    )
+                else:
+                    app.logger.exception("Cashier account creation failed.")
+                    error = "The cashier account could not be created."
+            except pymysql.MySQLError:
+                database.rollback()
+                app.logger.exception(
+                    "Database error creating a cashier account."
+                )
+                error = "The cashier account could not be created."
+
+    with database.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                users.user_id,
+                users.username,
+                users.email,
+                business_cashiers.is_active,
+                business_cashiers.created_at
+            FROM business_cashiers
+            INNER JOIN users
+                ON users.user_id = business_cashiers.user_id
+            WHERE business_cashiers.business_id = %s
+            ORDER BY users.username
+            """,
+            (business["business_id"],),
+        )
+        cashiers = cursor.fetchall()
+
+    return render_template(
+        "business/cashiers.html",
+        business=business,
+        cashiers=cashiers,
+        values=values,
+        error=error,
+    )
+
+
+@app.route(
+    "/business/cashiers/<int:cashier_user_id>/status",
+    methods=["POST"],
+)
+@business_required
+def update_cashier_status(cashier_user_id):
+    validate_csrf()
+    is_active = request.form.get("is_active") == "1"
+
+    with get_db().cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE business_cashiers
+            INNER JOIN businesses
+                ON businesses.business_id =
+                    business_cashiers.business_id
+            SET business_cashiers.is_active = %s
+            WHERE business_cashiers.user_id = %s
+              AND businesses.user_id = %s
+            """,
+            (is_active, cashier_user_id, g.user["user_id"]),
+        )
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                """
+                SELECT business_cashier_id
+                FROM business_cashiers
+                INNER JOIN businesses
+                    ON businesses.business_id =
+                        business_cashiers.business_id
+                WHERE business_cashiers.user_id = %s
+                  AND businesses.user_id = %s
+                """,
+                (cashier_user_id, g.user["user_id"]),
+            )
+            if cursor.fetchone() is None:
+                abort(404)
+        elif not is_active:
+            cursor.execute(
+                """
+                DELETE FROM trusted_devices
+                WHERE user_id = %s
+                """,
+                (cashier_user_id,),
+            )
+
+    flash(
+        "Cashier access updated.",
+        "cashier_success",
+    )
+    return redirect(url_for("business_cashiers"))
+
 
 @app.route("/business/forecasting", methods=["GET", "POST"])
 @business_required
@@ -3382,6 +4012,21 @@ FROM businesses
         )
 
         totals = cursor.fetchone()
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS today_transactions
+            FROM sales_transactions
+            WHERE business_id = %s
+              AND completed_at >= %s
+              AND completed_at < %s
+            """,
+            (
+                business["business_id"],
+                today,
+                today + timedelta(days=1),
+            ),
+        )
+        totals["today_transactions"] = cursor.fetchone()["today_transactions"]
 
         cursor.execute(
             """
@@ -4026,6 +4671,108 @@ def business_products():
         search=search,
     )
 
+@app.route("/cashier/sales", methods=["GET", "POST"])
+@cashier_required
+def cashier_sales():
+    business = get_business_for_user(
+        g.user["user_id"],
+        g.user["role"],
+    )
+    if business is None:
+        abort(403, description="Your cashier account is not active.")
+
+    error = None
+    cart_json = "[]"
+
+    with get_db().cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                products.product_id,
+                products.product_name,
+                products.selling_unit,
+                products.selling_price,
+                COALESCE(stock.available_stock, 0) AS available_stock
+            FROM products
+            LEFT JOIN (
+                SELECT
+                    product_id,
+                    SUM(
+                        CASE
+                            WHEN movement_type IN (
+                                'Stock In', 'Adjustment In'
+                            )
+                            THEN quantity
+                            ELSE -quantity
+                        END
+                    ) AS available_stock
+                FROM stock_movements
+                GROUP BY product_id
+            ) AS stock ON stock.product_id = products.product_id
+            WHERE products.business_id = %s
+            ORDER BY products.product_name
+            """,
+            (business["business_id"],),
+        )
+        products = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT
+                transactions.transaction_code,
+                transactions.completed_at,
+                transactions.total_amount,
+                COUNT(items.transaction_item_id) AS item_count
+            FROM sales_transactions AS transactions
+            LEFT JOIN sales_transaction_items AS items
+                ON items.transaction_id = transactions.transaction_id
+            WHERE transactions.cashier_user_id = %s
+            GROUP BY
+                transactions.transaction_id,
+                transactions.transaction_code,
+                transactions.completed_at,
+                transactions.total_amount
+            ORDER BY transactions.completed_at DESC,
+                     transactions.transaction_id DESC
+            LIMIT 10
+            """,
+            (g.user["user_id"],),
+        )
+        recent_transactions = cursor.fetchall()
+
+    if request.method == "POST":
+        validate_csrf()
+        cart_json = request.form.get("cart_json", "")[:20000]
+        try:
+            transaction_code = complete_sales_transaction(
+                business["business_id"],
+                g.user["user_id"],
+                cart_json,
+            )
+        except ValueError as transaction_error:
+            error = str(transaction_error)
+        except pymysql.MySQLError:
+            app.logger.exception(
+                "Database error while saving a cashier transaction."
+            )
+            error = "The transaction could not be saved. Try again."
+        else:
+            flash(
+                f"Transaction {transaction_code} completed.",
+                "sales_success",
+            )
+            return redirect(url_for("cashier_sales"))
+
+    return render_template(
+        "business/cashier_sales.html",
+        business=business,
+        products=products,
+        recent_transactions=recent_transactions,
+        cart_json=cart_json,
+        error=error,
+    )
+
+
 @app.route("/business/sales", methods=["GET", "POST"])
 @business_required
 def business_sales():
@@ -4076,140 +4823,367 @@ def business_sales():
 
         cursor.execute(
             """
-            SELECT product_id, product_name, selling_unit, selling_price
+            SELECT
+                products.product_id,
+                products.product_name,
+                products.selling_unit,
+                products.selling_price,
+                COALESCE(stock.available_stock, 0) AS available_stock
             FROM products
-            WHERE business_id = %s
-            ORDER BY product_name
+            LEFT JOIN (
+                SELECT
+                    product_id,
+                    SUM(
+                        CASE
+                            WHEN movement_type IN (
+                                'Stock In', 'Adjustment In'
+                            )
+                            THEN quantity
+                            ELSE -quantity
+                        END
+                    ) AS available_stock
+                FROM stock_movements
+                GROUP BY product_id
+            ) AS stock ON stock.product_id = products.product_id
+            WHERE products.business_id = %s
+            ORDER BY products.product_name
             """,
             (business["business_id"],),
         )
 
         products = cursor.fetchall()
+        cursor.execute(
+            """
+            SELECT
+                transactions.transaction_id,
+                transactions.transaction_code,
+                transactions.completed_at,
+                transactions.status,
+                transactions.total_amount,
+                users.username AS cashier_name
+            FROM sales_transactions AS transactions
+            INNER JOIN users
+                ON users.user_id = transactions.cashier_user_id
+            WHERE transactions.business_id = %s
+            ORDER BY transactions.completed_at DESC,
+                     transactions.transaction_id DESC
+            LIMIT 20
+            """,
+            (business["business_id"],),
+        )
+        recent_transactions = cursor.fetchall()
+        if recent_transactions:
+            transaction_ids = [
+                transaction["transaction_id"]
+                for transaction in recent_transactions
+            ]
+            placeholders = ", ".join(["%s"] * len(transaction_ids))
+            cursor.execute(
+                f"""
+                SELECT
+                    transaction_id,
+                    product_name,
+                    selling_unit,
+                    quantity_sold,
+                    unit_price,
+                    line_total
+                FROM sales_transaction_items
+                WHERE transaction_id IN ({placeholders})
+                ORDER BY transaction_id DESC, transaction_item_id
+                """,
+                tuple(transaction_ids),
+            )
+            items_by_transaction = defaultdict(list)
+
+            for item in cursor.fetchall():
+                items_by_transaction[item["transaction_id"]].append(item)
+
+            for transaction in recent_transactions:
+                transaction["items"] = items_by_transaction[
+                    transaction["transaction_id"]
+                ]
 
     values = {
-        "product_id": "",
-        "sale_date": today.isoformat(),
-        "quantity_sold": "",
-        "sales_amount": "",
+        "cart_json": "[]",
     }
 
     if request.method == "POST":
         validate_csrf()
+        values["cart_json"] = request.form.get("cart_json", "")[:20000]
+        try:
+            transaction_code = complete_sales_transaction(
+                business["business_id"],
+                g.user["user_id"],
+                values["cart_json"],
+            )
+        except ValueError as transaction_error:
+            flash(str(transaction_error), "sales_error")
+        except pymysql.MySQLError:
+            app.logger.exception(
+                "Database error while saving a sales transaction."
+            )
+            flash(
+                "The transaction could not be saved. Try again.",
+                "sales_error",
+            )
+        else:
+            flash(
+                f"Transaction {transaction_code} completed.",
+                "sales_success",
+            )
+        return redirect(url_for("business_sales"))
 
-        values = {
-            field: request.form.get(field, "").strip()
-            for field in values
-        }
-
-        # Only accept a product belonging to this business.
-        selected_product = next(
-            (
-                product for product in products
-                if str(product["product_id"]) == values["product_id"]
-            ),
-            None,
-        )
-
-        sale_date = None
-        quantity = None
-        amount = None
+        cart = None
 
         try:
-            sale_date = date.fromisoformat(values["sale_date"])
+            cart = json.loads(values["cart_json"])
+        except (json.JSONDecodeError, TypeError):
+            error = "Review the items in this transaction and try again."
 
-            if sale_date > today:
-                error = "Actual sales cannot have a future date."
-
-        except ValueError:
-            error = "Enter a valid sales date."
-
-        try:
-            quantity = int(values["quantity_sold"])
-
-            if quantity < 0 or quantity > 2147483647:
-                raise ValueError
-
-        except ValueError:
-            error = "Enter a valid whole-number quantity of zero or more."
-
-        if selected_product is None:
-            error = "Choose one of your products."
+        quantities = {}
 
         if error is None:
-            # Calculate from the database price, not the submitted total.
-            price = Decimal(str(selected_product["selling_price"]))
-            amount = (price * quantity).quantize(Decimal("0.01"))
-
-            if (
-                not amount.is_finite()
-                or amount < 0
-                or amount > Decimal("9999999999.99")
-            ):
-                error = "The total is too large. Please check the quantity."
-                values["sales_amount"] = ""
+            if not isinstance(cart, list) or not 1 <= len(cart) <= 100:
+                error = "Add at least one product to the transaction."
             else:
-                values["sales_amount"] = format(amount, ".2f")
+                for item in cart:
+                    if not isinstance(item, dict):
+                        error = "Review the items in this transaction and try again."
+                        break
+
+                    try:
+                        raw_product_id = item.get("product_id")
+                        raw_quantity = item.get("quantity")
+
+                        if (
+                            isinstance(raw_product_id, bool)
+                            or isinstance(raw_quantity, bool)
+                            or not isinstance(raw_product_id, (int, str))
+                            or not isinstance(raw_quantity, (int, str))
+                            or (
+                                isinstance(raw_product_id, str)
+                                and not raw_product_id.isdecimal()
+                            )
+                            or (
+                                isinstance(raw_quantity, str)
+                                and not raw_quantity.isdecimal()
+                            )
+                        ):
+                            raise ValueError
+                        product_id = int(raw_product_id)
+                        quantity = int(raw_quantity)
+                    except (TypeError, ValueError):
+                        error = "Enter a valid whole-number quantity for each product."
+                        break
+
+                    if (
+                        isinstance(item.get("quantity"), bool)
+                        or quantity < 1
+                        or quantity > 2147483647
+                    ):
+                        error = "Each product quantity must be a positive whole number."
+                        break
+
+                    quantities[product_id] = (
+                        quantities.get(product_id, 0) + quantity
+                    )
+
+                    if quantities[product_id] > 2147483647:
+                        error = "The quantity for a product is too large."
+                        break
+
+        product_by_id = {
+            product["product_id"]: product for product in products
+        }
+        ordered_items = []
+        total_amount = Decimal("0.00")
+
+        if error is None:
+            for product_id, quantity in quantities.items():
+                product = product_by_id.get(product_id)
+
+                if product is None:
+                    error = "Choose products available to your business."
+                    break
+
+                unit_price = Decimal(str(product["selling_price"]))
+                line_total = (unit_price * quantity).quantize(Decimal("0.01"))
+
+                if (
+                    not line_total.is_finite()
+                    or line_total > Decimal("9999999999.99")
+                ):
+                    error = "The transaction total is too large."
+                    break
+
+                ordered_items.append({
+                    "product": product,
+                    "quantity": quantity,
+                    "unit_price": unit_price,
+                    "line_total": line_total,
+                })
+                total_amount += line_total
+
+            if total_amount > Decimal("9999999999.99"):
+                error = "The transaction total is too large."
+
+        if error is None and not ordered_items:
+            error = "Add at least one product to the transaction."
 
         if error is None:
             try:
+                transaction_code = uuid.uuid4().hex.upper()
+                completed_at = datetime.now(
+                    timezone(timedelta(hours=8))
+                ).replace(tzinfo=None)
                 database.begin()
 
                 with database.cursor() as cursor:
-                    # Lock the selected product while checking its stock.
+                    product_ids = sorted(quantities)
+                    placeholders = ", ".join(["%s"] * len(product_ids))
                     cursor.execute(
-                        """
-                        SELECT product_id
+                        f"""
+                        SELECT
+                            product_id,
+                            product_name,
+                            selling_unit,
+                            selling_price
                         FROM products
-                        WHERE product_id = %s
-                          AND business_id = %s
+                        WHERE business_id = %s
+                          AND product_id IN ({placeholders})
+                        ORDER BY product_id
                         FOR UPDATE
                         """,
-                        (
-                            selected_product["product_id"],
-                            business["business_id"],
-                        ),
+                        (business["business_id"], *product_ids),
                     )
 
-                    owned_product = cursor.fetchone()
-
-                    if owned_product is None:
-                        error = "Choose one of your products."
-
+                    locked_products = cursor.fetchall()
+                    if len(locked_products) != len(product_ids):
+                        error = "Choose products available to your business."
                     else:
+                        locked_by_id = {
+                            product["product_id"]: product
+                            for product in locked_products
+                        }
+                        total_amount = Decimal("0.00")
+
+                        for item in ordered_items:
+                            product_id = item["product"]["product_id"]
+                            product = locked_by_id[product_id]
+                            unit_price = Decimal(
+                                str(product["selling_price"])
+                            )
+                            line_total = (
+                                unit_price * item["quantity"]
+                            ).quantize(Decimal("0.01"))
+
+                            item["product"] = product
+                            item["unit_price"] = unit_price
+                            item["line_total"] = line_total
+                            total_amount += line_total
+
+                        if (
+                            total_amount > Decimal("9999999999.99")
+                            or any(
+                                item["line_total"]
+                                > Decimal("9999999999.99")
+                                for item in ordered_items
+                            )
+                        ):
+                            error = "The transaction total is too large."
+
+                    if error is None:
                         cursor.execute(
-                            """
-                            SELECT COALESCE(
-                                SUM(
+                            f"""
+                            SELECT
+                                product_id,
+                                COALESCE(SUM(
                                     CASE
                                         WHEN movement_type IN (
-                                            'Stock In',
-                                            'Adjustment In'
+                                            'Stock In', 'Adjustment In'
                                         )
                                         THEN quantity
                                         ELSE -quantity
                                     END
-                                ),
-                                0
-                            ) AS available_stock
+                                ), 0) AS available_stock
                             FROM stock_movements
-                            WHERE product_id = %s
+                            WHERE product_id IN ({placeholders})
+                            GROUP BY product_id
                             """,
-                            (selected_product["product_id"],),
+                            tuple(product_ids),
                         )
 
-                        available_stock = int(
-                            cursor.fetchone()["available_stock"]
-                        )
+                        stock_by_id = {
+                            row["product_id"]: int(row["available_stock"])
+                            for row in cursor.fetchall()
+                        }
 
-                        if quantity > available_stock:
-                            error = (
-                                f"Only {available_stock} "
-                                f"{selected_product['selling_unit']} "
-                                "are available. Add stock before "
-                                "recording this sale."
+                        for item in ordered_items:
+                            product = item["product"]
+                            product_id = product["product_id"]
+                            available_stock = stock_by_id.get(product_id, 0)
+
+                            if item["quantity"] > available_stock:
+                                error = (
+                                    f"Only {available_stock} "
+                                    f"{product['selling_unit']} of "
+                                    f"{product['product_name']} are available."
+                                )
+                                break
+
+                    if error is None:
+                        cursor.execute(
+                            """
+                            INSERT INTO sales_transactions (
+                                transaction_code,
+                                business_id,
+                                cashier_user_id,
+                                completed_at,
+                                status,
+                                total_amount
+                            )
+                            VALUES (%s, %s, %s, %s, 'Completed', %s)
+                            """,
+                            (
+                                transaction_code,
+                                business["business_id"],
+                                g.user["user_id"],
+                                completed_at,
+                                total_amount,
+                            ),
+                        )
+                        transaction_id = cursor.lastrowid
+
+                        for item in ordered_items:
+                            product = item["product"]
+                            product_id = product["product_id"]
+                            quantity = item["quantity"]
+                            line_total = item["line_total"]
+
+                            cursor.execute(
+                                """
+                                INSERT INTO sales_transaction_items (
+                                    transaction_id,
+                                    product_id,
+                                    product_name,
+                                    selling_unit,
+                                    quantity_sold,
+                                    unit_price,
+                                    line_total
+                                )
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    transaction_id,
+                                    product_id,
+                                    product["product_name"],
+                                    product["selling_unit"],
+                                    quantity,
+                                    item["unit_price"],
+                                    line_total,
+                                ),
                             )
 
-                        else:
                             cursor.execute(
                                 """
                                 INSERT INTO daily_sales (
@@ -4219,77 +5193,68 @@ def business_sales():
                                     sales_amount
                                 )
                                 VALUES (%s, %s, %s, %s)
+                                ON DUPLICATE KEY UPDATE
+                                    quantity_sold = quantity_sold
+                                        + VALUES(quantity_sold),
+                                    sales_amount = sales_amount
+                                        + VALUES(sales_amount)
                                 """,
                                 (
-                                    selected_product["product_id"],
-                                    sale_date,
+                                    product_id,
+                                    completed_at.date(),
                                     quantity,
-                                    amount,
+                                    line_total,
                                 ),
                             )
 
-                            sale_id = cursor.lastrowid
-
-                            if quantity > 0:
-                                cursor.execute(
-                                    """
-                                    INSERT INTO stock_movements (
-                                        product_id,
-                                        sale_id,
-                                        movement_type,
-                                        quantity,
-                                        notes
-                                    )
-                                    VALUES (
-                                        %s,
-                                        %s,
-                                        'Sold',
-                                        %s,
-                                        %s
-                                    )
-                                    """,
-                                    (
-                                        selected_product["product_id"],
-                                        sale_id,
-                                        quantity,
-                                        "Automatically recorded from sales.",
-                                    ),
+                            cursor.execute(
+                                """
+                                INSERT INTO stock_movements (
+                                    product_id,
+                                    movement_type,
+                                    quantity,
+                                    notes
                                 )
+                                VALUES (%s, 'Sold', %s, %s)
+                                """,
+                                (
+                                    product_id,
+                                    quantity,
+                                    f"Sale transaction {transaction_code}.",
+                                ),
+                            )
 
-                if error:
+                if error is not None:
                     database.rollback()
                 else:
                     database.commit()
+                    flash(
+                        f"Transaction {transaction_code} completed.",
+                        "sales_success",
+                    )
                     return redirect(url_for("business_sales"))
 
             except pymysql.err.IntegrityError as database_error:
                 database.rollback()
-
-                if database_error.args[0] == 1062:
-                    error = (
-                        "This product already has a sales record "
-                        "for that date."
-                    )
-                else:
-                    app.logger.exception(
-                        "Sales record could not be saved."
-                    )
-                    error = "The sales record could not be saved."
+                app.logger.exception(
+                    "Sales transaction could not be saved."
+                )
+                error = "The transaction could not be saved. Try again."
 
             except pymysql.MySQLError:
                 database.rollback()
                 app.logger.exception(
-                    "Database error while saving sales."
+                    "Database error while saving a sales transaction."
                 )
                 error = (
-                    "The sales record could not be saved. "
-                    "Try again."
+                    "The transaction could not be saved. Try again."
                 )
     sales = []
 
     summary = {
         "total_sales": Decimal("0.00"),
         "record_count": 0,
+        "transaction_count": 0,
         "total_units": 0,
         "average_daily_sales": Decimal("0.00"),
         "best_seller_name": None,
@@ -4392,8 +5357,38 @@ def business_sales():
 
             best_seller = cursor.fetchone()
 
+            cursor.execute(
+                """
+                SELECT COUNT(DISTINCT transactions.transaction_id)
+                    AS transaction_count
+                FROM sales_transactions AS transactions
+                WHERE transactions.business_id = %s
+                  AND transactions.completed_at >= %s
+                  AND transactions.completed_at < %s
+                  AND (
+                      %s = ''
+                      OR EXISTS (
+                          SELECT 1
+                          FROM sales_transaction_items AS items
+                          WHERE items.transaction_id =
+                              transactions.transaction_id
+                            AND LOCATE(%s, items.product_name) > 0
+                      )
+                  )
+                """,
+                (
+                    business["business_id"],
+                    stat_start,
+                    stat_end + timedelta(days=1),
+                    filters["search"],
+                    filters["search"],
+                ),
+            )
+            transaction_totals = cursor.fetchone()
+
             summary["total_sales"] = current_totals["total_sales"]
             summary["record_count"] = current_totals["record_count"]
+            summary["transaction_count"] = transaction_totals["transaction_count"]
             summary["total_units"] = current_totals["total_units"]
             summary["average_daily_sales"] = (
                 current_totals["total_sales"] / period_days
@@ -4426,6 +5421,20 @@ def business_sales():
                     daily_sales.sales_amount,
                     products.product_name,
                     products.selling_unit,
+                    EXISTS (
+                        SELECT 1
+                        FROM sales_transactions AS transactions
+                        INNER JOIN sales_transaction_items AS items
+                            ON items.transaction_id =
+                                transactions.transaction_id
+                        WHERE transactions.business_id =
+                            products.business_id
+                          AND items.product_id = products.product_id
+                          AND transactions.completed_at >=
+                              daily_sales.sale_date
+                          AND transactions.completed_at <
+                              DATE_ADD(daily_sales.sale_date, INTERVAL 1 DAY)
+                    ) AS transaction_backed,
                     CASE
                         WHEN daily_sales.quantity_sold > 0
                         THEN daily_sales.sales_amount / daily_sales.quantity_sold
@@ -4499,8 +5508,9 @@ def business_sales():
         business=business,
         products=products,
         sales=sales,
+        recent_transactions=recent_transactions,
         values=values,
-        today=today.isoformat(),
+        today=today,
         error=error,
         filters=filters,
         filter_error=filter_error,
@@ -4540,6 +5550,20 @@ def edit_sale(sale_id):
                 ON businesses.business_id = products.business_id
             WHERE daily_sales.sale_id = %s
               AND businesses.user_id = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM sales_transactions AS transactions
+                  INNER JOIN sales_transaction_items AS items
+                      ON items.transaction_id =
+                          transactions.transaction_id
+                  WHERE transactions.business_id =
+                      businesses.business_id
+                    AND items.product_id = daily_sales.product_id
+                    AND transactions.completed_at >=
+                        daily_sales.sale_date
+                    AND transactions.completed_at <
+                        DATE_ADD(daily_sales.sale_date, INTERVAL 1 DAY)
+              )
             """,
             (sale_id, g.user["user_id"]),
         )
@@ -4828,6 +5852,20 @@ def bulk_edit_sales():
                 ON businesses.business_id = products.business_id
             WHERE businesses.user_id = %s
               AND daily_sales.sale_id IN ({placeholders})
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM sales_transactions AS transactions
+                  INNER JOIN sales_transaction_items AS items
+                      ON items.transaction_id =
+                          transactions.transaction_id
+                  WHERE transactions.business_id =
+                      businesses.business_id
+                    AND items.product_id = daily_sales.product_id
+                    AND transactions.completed_at >=
+                        daily_sales.sale_date
+                    AND transactions.completed_at <
+                        DATE_ADD(daily_sales.sale_date, INTERVAL 1 DAY)
+              )
             ORDER BY daily_sales.sale_date DESC,
                      products.product_name
             """,
@@ -5141,11 +6179,7 @@ def bulk_edit_sales():
 @app.route("/business/sales/<int:sale_id>/delete", methods=["POST"])
 @business_required
 def delete_sale(sale_id):
-
-    @app.route("/business/sales/<int:sale_id>/delete", methods=["POST"])
-    @business_required
-    def delete_sale(sale_id):
-      validate_csrf()
+    validate_csrf()
 
     with get_db().cursor() as cursor:
         cursor.execute(
@@ -5158,6 +6192,20 @@ def delete_sale(sale_id):
                 ON businesses.business_id = products.business_id
             WHERE daily_sales.sale_id = %s
               AND businesses.user_id = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM sales_transactions AS transactions
+                  INNER JOIN sales_transaction_items AS items
+                      ON items.transaction_id =
+                          transactions.transaction_id
+                  WHERE transactions.business_id =
+                      businesses.business_id
+                    AND items.product_id = daily_sales.product_id
+                    AND transactions.completed_at >=
+                        daily_sales.sale_date
+                    AND transactions.completed_at <
+                        DATE_ADD(daily_sales.sale_date, INTERVAL 1 DAY)
+              )
             """,
             (sale_id, g.user["user_id"]),
         )
@@ -5221,6 +6269,20 @@ def bulk_delete_sales():
                     ON businesses.business_id = products.business_id
                 WHERE businesses.user_id = %s
                   AND daily_sales.sale_id IN ({placeholders})
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM sales_transactions AS transactions
+                      INNER JOIN sales_transaction_items AS items
+                          ON items.transaction_id =
+                              transactions.transaction_id
+                      WHERE transactions.business_id =
+                          businesses.business_id
+                        AND items.product_id = daily_sales.product_id
+                        AND transactions.completed_at >=
+                            daily_sales.sale_date
+                        AND transactions.completed_at <
+                            DATE_ADD(daily_sales.sale_date, INTERVAL 1 DAY)
+                  )
                 FOR UPDATE
                 """,
                 (g.user["user_id"], *sale_ids),

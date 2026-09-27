@@ -1,4 +1,210 @@
-/* A simple two-section sales page */
+.cashier-panel {
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(30, 94, 70, 0.12), rgba(12, 16, 22, 0.02));
+}
+
+.cashier-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.cashier-kicker {
+    margin: 0 0 4px;
+    color: var(--green-dark);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.cashier-header h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+}
+
+.cashier-date {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cashier-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.cashier-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cashier-field-wide {
+    grid-column: span 2;
+}
+
+.cashier-field label {
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.cashier-field-label {
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.cashier-availability {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+}
+
+.cashier-status {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--red);
+    font-size: 14px;
+}
+
+.cashier-field input,
+.cashier-field select {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--ink);
+    font-size: 15px;
+}
+
+.cashier-total-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--green-soft);
+    border-radius: 12px;
+    background: rgba(35, 126, 92, 0.08);
+}
+
+.cashier-total-box label {
+    margin: 0;
+}
+
+.cashier-total-box strong {
+    font-size: clamp(1.5rem, 2.3vw, 2.2rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.cashier-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    grid-column: 1 / -1;
+}
+
+.cashier-add-action {
+    grid-column: 1 / -1;
+}
+
+.cashier-order {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+.cashier-order h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+}
+
+.cashier-order-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cashier-order-table th,
+.cashier-order-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.cashier-order-table th {
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.cashier-order-table input {
+    width: 100px;
+    min-height: 40px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+}
+
+.cashier-empty-cart {
+    color: var(--ink-soft);
+    text-align: center !important;
+}
+
+.cashier-remove-item {
+    padding: 8px 10px;
+}
+
+@media (max-width: 900px) {
+    .cashier-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .cashier-panel {
+        padding: 18px;
+    }
+
+    .cashier-form {
+        grid-template-columns: 1fr;
+    }
+
+    .cashier-field-wide,
+    .cashier-add-action,
+    .cashier-order,
+    .cashier-status,
+    .cashier-actions {
+        grid-column: 1;
+    }
+
+    .cashier-actions {
+        justify-content: stretch;
+    }
+
+    .cashier-actions .btn {
+        flex: 1;
+    }
+}
+
 .sales-page {
     display: grid;
     gap: 22px;
